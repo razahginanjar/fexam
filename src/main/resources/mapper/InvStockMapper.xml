@@ -119,6 +119,18 @@
             <if test="warehouseId !=null">
                 and fis.warehouse_id = #{warehouseId,jdbcType = INTEGER}
             </if>
+            <if test="materialsId != null and materialsId.size() > 0">
+                AND fis.material_id IN
+                <foreach collection="materialsId" item="materialId" open="(" separator="," close=")">
+                    #{materialId}
+                </foreach>
+            </if>
+            <if test="batchIds != null and batchIds.size() > 0">
+                AND fis.batch_id IN
+                <foreach collection="batchIds" item="batchId" open="(" separator="," close=")">
+                    #{batchId}
+                </foreach>
+            </if>
         </where>
     </select>
 </mapper>

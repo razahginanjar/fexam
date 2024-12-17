@@ -26,6 +26,10 @@ import com.hand.demo.app.service.InvCountHeaderService;
 import org.springframework.stereotype.Service;
 import spire.random.Const;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.Month;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -63,6 +67,8 @@ public class InvCountHeaderServiceImpl implements InvCountHeaderService {
     private InvCountLineRepository invCountLineRepository;
     @Autowired
     private IamDepartmentRepository iamDepartmentRepository;
+    @Autowired
+    private InvStockRepository invStockRepository;
 
     @Override
     public Page<InvCountHeaderDTO> selectList(PageRequest pageRequest, InvCountHeaderDTO invCountHeader) {
@@ -212,14 +218,21 @@ public class InvCountHeaderServiceImpl implements InvCountHeaderService {
         Map<String, String> typeMap = mapLov.get(Constants.LOV_COUNT_TYPE);
         Map<String, String> countModeMap = mapLov.get(Constants.LOV_COUNT_MODE);
         Map<String, String> dimensionMap = mapLov.get(Constants.LOV_DIMENSION);
-        if(!statusMap.containsKey(invCountHeaderDTO.getCountStatus()))
-        {
+        if(!statusMap.containsKey(invCountHeaderDTO.getCountStatus())) {
             errMsg.append("Status Doesn't exists in Lov");
         }
-        if(!typeMap.containsKey(invCountHeaderDTO.getCountType()))
-        {
+        if(!typeMap.containsKey(invCountHeaderDTO.getCountType())) {
             errMsg.append("Type Doesn't exists in Lov");
         }
+        if(invCountHeaderDTO.getCountType().equals("YEAR")) {
+            invCountHeaderDTO.setCountTimeStr(String.valueOf(LocalDate.from(Instant.now()).getYear()));
+        }else {
+            Month month = LocalDate.from(Instant.now()).getMonth();
+            int value = month.getValue();
+            int year = LocalDate.from(Instant.now()).getYear();
+            invCountHeaderDTO.setCountTimeStr(year + "-" + value);
+        }
+
         if(!countModeMap.containsKey(invCountHeaderDTO.getCountMode()))
         {
             errMsg.append("Mode Doesn't exists in Lov");
@@ -245,6 +258,37 @@ public class InvCountHeaderServiceImpl implements InvCountHeaderService {
         }
     }
 
+    public void validateAvailability(InvCountHeaderDTO invCountHeaderDTO, StringBuilder errMsg) {
+
+        String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
+        String[] split = snapshotBatchIds.split(",");
+        List<Long> batchIds = Arrays.stream(split).map(Long::parseLong).collect(Collectors.toList());
+        String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
+        String[] split1 = snapshotMaterialIds.split(",");
+        List<Long> materialIds = Arrays.stream(split1).map(Long::parseLong).collect(Collectors.toList());
+
+        InvStock invStock = new InvStock().setTenantId(invCountHeaderDTO.getTenantId())
+                .setCompanyId(invCountHeaderDTO.getCompanyId())
+                .setDepartmentId(invCountHeaderDTO.getDepartmentId())
+                .setWarehouseId(invCountHeaderDTO.getWarehouseId())
+                .setBatchIds(batchIds)
+                .setMaterialsId(materialIds);
+        List<InvStock> invStocks = invStockRepository.selectList(invStock);
+        if(invStocks.isEmpty())
+        {
+            errMsg.append("Unable to query on hand quantity data.");
+        }
+        invStocks.forEach(
+                invStock1 ->
+                {
+                    if (invStock1.getAvailableQuantity().compareTo(BigDecimal.ZERO) <= 0)
+                    {
+                        errMsg.append("Stock is empty! for id: ").append(invStock1.getStockId()).append(".");
+                    }
+                }
+        );
+    }
+
 
     @Override
     public InvCountInfoDTO executeCheck(List<InvCountHeaderDTO> headerDTOS) {
@@ -263,26 +307,31 @@ public class InvCountHeaderServiceImpl implements InvCountHeaderService {
             }
             validateLOVs(errMsg, headerDTO, stringMapMap);
             validateComDepaWare(headerDTO, errMsg);
-
-
+            validateAvailability(headerDTO, errMsg);
+            if(headerDTO.getSupervisorIds().isEmpty())
+            {
+                errMsg.append("Supervisor cannot be empty");
+            }
+            if(headerDTO.getCounterIds().isEmpty())
+            {
+                errMsg.append("Counter cannot be empty");
+            }
         }
+        return getTheInfo(headerDTOS);
+    }
 
+    @Override
+    public List<InvCountHeaderDTO> execute(List<InvCountHeaderDTO> headerDTOS) {
+        Map<Long, InvCountHeader> headerMap = selectByIds(headerDTOS);
+        headerDTOS.forEach(
+                invCountHeaderDTO ->
+                {
+                    headerMap.get(invCountHeaderDTO.getCountHeaderId()).setCountStatus("IN_COUNTING");
+                }
+        );
+        invCountHeaderRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(headerMap.values()));
 
-        Requery the database based on the input document ID
-        For(invCountHeader : invCountHeaders) {
-        // a. document status validation: Only draft status can execute
-        // b. current login user validation: Only the document creator can execute
-        // c. value set validation
-        // d. company, department, warehouse validation
-        // e. on hand quantity validation
-            Query the stock data that the on hand quantity is not 0 according
-            to the tenantId + companyId + departmentId + warehouseId +
-                    snapshotMaterialIds + snapshotBatchIds on the table header,
-            if no data is queried, error message: Unable to query on hand quantity data.
-        }
-
-
-        return null;
+        return Collections.emptyList();
     }
 
     public Map<Long, InvCountHeader> selectByIds(List<InvCountHeaderDTO> headerDTOS)

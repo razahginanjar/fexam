@@ -36,6 +36,6 @@ public interface InvCountHeaderService {
     InvCountInfoDTO checkAndRemove(List<InvCountHeaderDTO> invCountHeaderDTOS);
     InvCountHeaderDTO detail (Long countHeaderId);
     InvCountInfoDTO executeCheck(List<InvCountHeaderDTO> headerDTOS);
-
+    List<InvCountHeaderDTO> execute(List<InvCountHeaderDTO> headerDTOS);
 }
 

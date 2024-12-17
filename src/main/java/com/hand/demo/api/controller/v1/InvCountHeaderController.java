@@ -66,7 +66,7 @@ public class InvCountHeaderController extends BaseController {
         return Results.success(invCountHeaderDTO);
     }
 
-    @ApiOperation(value = "创建或更新")
+    @ApiOperation(value = "orderSave")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<List<InvCountHeaderDTO>> manualSave(@PathVariable Long organizationId,
@@ -78,7 +78,7 @@ public class InvCountHeaderController extends BaseController {
         return Results.success(invCountHeaders);
     }
 
-    @ApiOperation(value = "创建或更新")
+    @ApiOperation(value = "orderSave")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping(
             path = "/verification"
@@ -103,10 +103,23 @@ public class InvCountHeaderController extends BaseController {
         validList(invCountHeaders);
         SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
         invCountHeaders.forEach(item -> item.setTenantId(organizationId));
-        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.manualSaveCheck(invCountHeaders);
+        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.executeCheck(invCountHeaders);
         return Results.success(invCountInfoDTO);
     }
-    @ApiOperation(value = "删除")
+
+    @ApiOperation(value = "orderSave")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @PostMapping
+    public ResponseEntity<List<InvCountHeaderDTO>> execute(@PathVariable Long organizationId,
+                                                              @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
+        validList(invCountHeaders);
+        SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
+        invCountHeaders.forEach(item -> item.setTenantId(organizationId));
+        invCountHeaderService.saveData(invCountHeaders);
+        return Results.success(invCountHeaders);
+    }
+
+    @ApiOperation(value = "orderRemove")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
     public ResponseEntity<?> checkAndRemove(@RequestBody List<InvCountHeaderDTO> invCountHeaders, @PathVariable String organizationId) {
