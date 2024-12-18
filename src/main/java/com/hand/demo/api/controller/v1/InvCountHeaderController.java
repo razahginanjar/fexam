@@ -12,6 +12,7 @@ import io.swagger.annotations.ApiOperation;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
+import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.core.util.Results;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
 import org.springframework.beans.BeanUtils;
@@ -45,6 +46,7 @@ public class InvCountHeaderController extends BaseController {
     @ApiOperation(value = "列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @ProcessCacheValue
     @GetMapping
     public ResponseEntity<Page<InvCountHeaderDTO>> list(InvCountHeaderDTO invCountHeader,
                                                         @PathVariable Long organizationId,
@@ -58,74 +60,33 @@ public class InvCountHeaderController extends BaseController {
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping("/{countHeaderId}/detail")
     @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @ProcessCacheValue
     public ResponseEntity<InvCountHeaderDTO> detail(@PathVariable Long countHeaderId,
                                                     @PathVariable String organizationId) {
-        InvCountHeader invCountHeader = invCountHeaderRepository.selectByPrimary(countHeaderId);
-        InvCountHeaderDTO invCountHeaderDTO = new InvCountHeaderDTO();
-        BeanUtils.copyProperties(invCountHeader, invCountHeaderDTO);
-        return Results.success(invCountHeaderDTO);
+        InvCountHeaderDTO detail = invCountHeaderService.detail(countHeaderId);
+        return Results.success(detail);
     }
 
     @ApiOperation(value = "orderSave")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
-    public ResponseEntity<List<InvCountHeaderDTO>> manualSave(@PathVariable Long organizationId,
+    public ResponseEntity<InvCountInfoDTO> orderSave(@PathVariable Long organizationId,
                                                              @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
-        validList(invCountHeaders);
         SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
         invCountHeaders.forEach(item -> item.setTenantId(organizationId));
-        invCountHeaderService.saveData(invCountHeaders);
-        return Results.success(invCountHeaders);
-    }
-
-    @ApiOperation(value = "orderSave")
-    @Permission(level = ResourceLevel.ORGANIZATION)
-    @PostMapping(
-            path = "/verification"
-    )
-    public ResponseEntity<InvCountInfoDTO> manualSaveCheck(@PathVariable Long organizationId,
-                                                            @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
-        validList(invCountHeaders);
-        SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
-        invCountHeaders.forEach(item -> item.setTenantId(organizationId));
-        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.manualSaveCheck(invCountHeaders);
+        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.orderSave(invCountHeaders);
         return Results.success(invCountInfoDTO);
     }
 
-
-    @ApiOperation(value = "创建或更新")
-    @Permission(level = ResourceLevel.ORGANIZATION)
-    @PostMapping(
-            path = "/execute/verification"
-    )
-    public ResponseEntity<InvCountInfoDTO> executeCheck(@PathVariable Long organizationId,
-                                                           @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
-        validList(invCountHeaders);
-        SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
-        invCountHeaders.forEach(item -> item.setTenantId(organizationId));
-        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.executeCheck(invCountHeaders);
-        return Results.success(invCountInfoDTO);
-    }
-
-    @ApiOperation(value = "orderSave")
-    @Permission(level = ResourceLevel.ORGANIZATION)
-    @PostMapping
-    public ResponseEntity<List<InvCountHeaderDTO>> execute(@PathVariable Long organizationId,
-                                                              @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
-        validList(invCountHeaders);
-        SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
-        invCountHeaders.forEach(item -> item.setTenantId(organizationId));
-        invCountHeaderService.saveData(invCountHeaders);
-        return Results.success(invCountHeaders);
-    }
 
     @ApiOperation(value = "orderRemove")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
-    public ResponseEntity<?> checkAndRemove(@RequestBody List<InvCountHeaderDTO> invCountHeaders, @PathVariable String organizationId) {
+    public ResponseEntity<?> checkAndRemove(@RequestBody List<InvCountHeaderDTO> invCountHeaders,
+                                            @PathVariable String organizationId) {
         SecurityTokenHelper.validToken(invCountHeaders);
-        invCountHeaderService.checkAndRemove(invCountHeaders);
-        return Results.success();
+        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.checkAndRemove(invCountHeaders);
+        return Results.success(invCountInfoDTO);
     }
 
 }

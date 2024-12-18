@@ -20,6 +20,7 @@ public class Constants {
     public static final String ERROR_NOT_SUPERVISOR = "fexam-37.not_an_supervisor";
     public static final String ERROR_NOT_CREATOR_COUNTER_SUPERVISOR = "fexam-37.not_creator_counter_and_supervisor";
     public static final String ERROR_ORDER_NOT_FOUND = "hexam-37.counter_not_found";
+    public static final String PROFILE_CONTENT_CODE = "FEXAM37.INV.COUNTING.ISWORKFLO";
     private Constants() {}
 
 

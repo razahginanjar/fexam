@@ -1,5 +1,6 @@
 package com.hand.demo.app.service.impl;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -9,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvStock;
 import com.hand.demo.domain.repository.InvStockRepository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,6 +36,26 @@ public class InvStockServiceImpl implements InvStockService {
         List<InvStock> updateList = invStocks.stream().filter(line -> line.getStockId() != null).collect(Collectors.toList());
         invStockRepository.batchInsertSelective(insertList);
         invStockRepository.batchUpdateByPrimaryKeySelective(updateList);
+    }
+    @Override
+    public List<InvStock> getListStockAccordingHeader(InvCountHeaderDTO invCountHeaderDTO){
+        InvStock invStock = new InvStock();
+        invStock.setDepartmentId(invCountHeaderDTO.getDepartmentId());
+        invStock.setWarehouseId(invCountHeaderDTO.getWarehouseId());
+        invStock.setCompanyId(invCountHeaderDTO.getCompanyId());
+        invStock.setTenantId(invCountHeaderDTO.getTenantId());
+        String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
+        String[] split1 = snapshotMaterialIds.split(",");
+        List<Long> materialIds = Arrays.stream(split1).map(Long::parseLong).collect(Collectors.toList());
+        invStock.setMaterialsId(materialIds);
+        if(invCountHeaderDTO.getCountDimension().equals("LOT"))
+        {
+            String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
+            String[] split = snapshotBatchIds.split(",");
+            List<Long> batchIds = Arrays.stream(split).map(Long::parseLong).collect(Collectors.toList());
+            invStock.setBatchIds(batchIds);
+        }
+        return invStockRepository.selectList(invStock);
     }
 }
 

@@ -8,6 +8,8 @@ import com.hand.demo.app.service.InvCountExtraService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvCountExtra;
 import com.hand.demo.domain.repository.InvCountExtraRepository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +31,7 @@ public class InvCountExtraServiceImpl implements InvCountExtraService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.NESTED)
     public void saveData(List<InvCountExtra> invCountExtras) {
         List<InvCountExtra> insertList = invCountExtras.stream().filter(line -> line.getExtraInfoId() == null).collect(Collectors.toList());
         List<InvCountExtra> updateList = invCountExtras.stream().filter(line -> line.getExtraInfoId() != null).collect(Collectors.toList());

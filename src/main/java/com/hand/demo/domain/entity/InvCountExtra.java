@@ -10,13 +10,16 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * (InvCountExtra)实体类
@@ -30,6 +33,7 @@ import lombok.Setter;
 @ApiModel("")
 @VersionAudit
 @ModifyAudit
+@Accessors(chain = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 @Table(name = "fexam_inv_count_extra")
 public class InvCountExtra extends AuditDomain {
@@ -135,6 +139,8 @@ public class InvCountExtra extends AuditDomain {
     @NotNull
     private Long tenantId;
 
+    @Transient
+    private List<Long> sourceIds;
 
 }
 

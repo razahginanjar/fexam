@@ -35,7 +35,7 @@
                 ficl.warehouse_id,
             ficl.creation_date,         ficl.created_by,         ficl.last_updated_by,         ficl.last_update_date,         ficl.object_version_number    </sql>
 
-    <select id = "selectList" resultType = "com.hand.demo.domain.entity.InvCountLine">
+    <select id = "selectList" resultType = "com.hand.demo.api.dto.InvCountLineDTO">
         select
         <include refid = "BaseSql"/>
         from fexam_inv_count_line ficl
@@ -126,6 +126,12 @@
             </if>
             <if test="warehouseId !=null">
                 and ficl.warehouse_id = #{warehouseId,jdbcType = INTEGER}
+            </if>
+            <if test="idsHeader != null and idsHeader.size() > 0">
+                AND ficl.count_header_id  IN
+                <foreach collection="idsHeader" item="idHeader" open="(" separator="," close=")">
+                    #{idHeader}
+                </foreach>
             </if>
         </where>
     </select>

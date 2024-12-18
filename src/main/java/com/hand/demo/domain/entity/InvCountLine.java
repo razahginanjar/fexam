@@ -70,6 +70,7 @@ public class InvCountLine extends AuditDomain {
     @ApiModelProperty("")
     @Id
     @GeneratedValue
+    @NotNull(groups = {UpdateCheck.class})
     private Long countLineId;
 
     @ApiModelProperty(value = "")
@@ -124,41 +125,47 @@ public class InvCountLine extends AuditDomain {
     private Long batchId;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull
+    @NotNull(groups = {CreateCheck.class})
     private Long countHeaderId;
 
     @ApiModelProperty(value = "")
-    private Object counterIds;
+    @NotNull(groups = {CreateCheck.class})
+    private String counterIds;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull
+    @NotNull(groups = {UpdateCheck.class})
     private Integer lineNumber;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {CreateCheck.class})
     private Long materialId;
 
     @ApiModelProperty(value = "")
     private String remark;
 
     @ApiModelProperty(value = "")
-    private Object snapshotUnitQty;
+    @NotNull(groups = {CreateCheck.class, UpdateCheck.class})
+    private BigDecimal snapshotUnitQty;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull
+    @NotNull(groups = {CreateCheck.class, UpdateCheck.class})
     private Long tenantId;
 
     @ApiModelProperty(value = "")
     private String unitCode;
 
     @ApiModelProperty(value = "unit_diff_qty = unit_qty - snapshot_unit_qty")
-    private Object unitDiffQty;
+    private BigDecimal unitDiffQty;
 
     @ApiModelProperty(value = "")
-    private Object unitQty;
+    private BigDecimal unitQty;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {CreateCheck.class})
     private Long warehouseId;
 
+    public interface UpdateCheck{}
+    public interface CreateCheck{}
 
 }
 

@@ -34,6 +34,9 @@
         <include refid = "BaseSql"/>
         from fexam_inv_count_extra fice
         <where>
+            <if test="extraInfoId !=null">
+                and fice.extra_info_id = #{extraInfoId,jdbcType = INTEGER}
+            </if>
             <if test="attribute1 !=null">
                 and fice.attribute1 = #{attribute1,jdbcType = VARCHAR}
             </if>
@@ -82,8 +85,29 @@
             <if test="attributeCategory !=null">
                 and fice.attribute_category = #{attributeCategory,jdbcType = VARCHAR}
             </if>
+            <if test="enabledFlag !=null">
+                and fice.enabled_flag = #{enabledFlag,jdbcType = INTEGER}
+            </if>
+            <if test="programKey !=null">
+                and fice.program_key = #{programKey,jdbcType = VARCHAR}
+            </if>
+            <if test="programValue !=null">
+                and fice.program_value = #{programValue,jdbcType = VARCHAR}
+            </if>
             <if test="remark !=null">
                 and fice.remark = #{remark,jdbcType = VARCHAR}
+            </if>
+            <if test="sourceId !=null">
+                and fice.source_id = #{sourceId,jdbcType = INTEGER}
+            </if>
+            <if test="tenantId !=null">
+                and fice.tenant_id = #{tenantId,jdbcType = INTEGER}
+            </if>
+            <if test="sourceIds != null and sourceIds.size() > 0">
+                AND fice.source_id IN
+                <foreach collection="sourceIds" item="sourceId" open="(" separator="," close=")">
+                    #{sourceId}
+                </foreach>
             </if>
         </where>
     </select>

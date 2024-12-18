@@ -85,6 +85,7 @@ public class InvCountHeader extends AuditDomain {
     @ApiModelProperty("")
     @Id
     @GeneratedValue
+    @NotNull(groups = {UpdateCheck.class})
     private Long countHeaderId;
 
     @ApiModelProperty(value = "")
@@ -139,6 +140,7 @@ public class InvCountHeader extends AuditDomain {
     private String attributeCategory;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {UpdateCheck.class, CreateCheck.class})
     private Long companyId;
 
     @ApiModelProperty(value = "")
@@ -150,12 +152,12 @@ public class InvCountHeader extends AuditDomain {
     private String countMode;
 
     @ApiModelProperty(value = "", required = true)
-    @NotBlank
+    @NotBlank(groups = {UpdateCheck.class})
     private String countNumber;
 
     @ApiModelProperty(value = "", required = true)
     @LovValue(lovCode = Constants.LOV_STATUS)
-    @NotBlank
+    @NotBlank(groups = {CreateCheck.class})
     private String countStatus;
 
     @ApiModelProperty(value = "")
@@ -166,6 +168,7 @@ public class InvCountHeader extends AuditDomain {
     private String countType;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {CreateCheck.class})
     private String counterIds;
 
     @ApiModelProperty(value = "")
@@ -199,19 +202,24 @@ public class InvCountHeader extends AuditDomain {
     private String sourceSystem;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {CreateCheck.class})
     private String supervisorIds;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull
+    @NotNull(groups = {CreateCheck.class})
     private Long tenantId;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {CreateCheck.class})
     private Long warehouseId;
 
     @ApiModelProperty(value = "")
     private Long workflowId;
 
 
-    public interface validation{ }
+    public interface CreateCheck{ }
+    public interface UpdateCheck{}
+    public interface Execute{}
+    public interface ExecuteCheck{}
 }
 

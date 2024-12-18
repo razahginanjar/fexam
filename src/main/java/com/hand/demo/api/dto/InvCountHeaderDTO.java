@@ -6,17 +6,20 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hzero.common.HZeroCacheKey;
 import org.hzero.core.cache.CacheValue;
+import org.hzero.core.cache.Cacheable;
 
 import javax.persistence.Transient;
 import java.util.List;
 
 @Getter
 @Setter
-public class InvCountHeaderDTO extends InvCountHeader {
+public class InvCountHeaderDTO extends InvCountHeader implements Cacheable {
     @ApiModelProperty(value = "Error Message")
     private String errorMsg;
 
     private List<InvCountLineDTO> invCountLineDTOList;
+
+    private String status;
 
     private String countModeMeaning;
 
@@ -27,23 +30,15 @@ public class InvCountHeaderDTO extends InvCountHeader {
     private String countTypeMeaning;
 
 
-    @CacheValue(key = HZeroCacheKey.USER,
-            primaryKey = "counterIds",
-            db = 1,
-            searchKey = "realName",
-            structure = CacheValue.DataStructure.LIST_OBJECT)
-    private List<String> counterList;
+    private List<UserDTO> counterList;
 
-    @CacheValue(key = HZeroCacheKey.USER,
-            primaryKey = "supervisorIds",
-            db = 1,
-            searchKey = "realName",
-            structure = CacheValue.DataStructure.LIST_OBJECT)
-    private List<String> supervisorList;
+    private List<UserDTO> supervisorList;
 
     private List<String> snapshotMaterialList;
 
     private List<String> snapshotBatchList;
 
     private boolean isWMSWarehouse;
+
+    private String employeeNumber;
 }

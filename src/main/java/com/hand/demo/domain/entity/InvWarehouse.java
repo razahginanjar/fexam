@@ -10,10 +10,12 @@ import io.swagger.annotations.ApiModelProperty;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -124,6 +126,11 @@ public class InvWarehouse extends AuditDomain {
     @ApiModelProperty(value = "")
     private String warehouseCode;
 
+    @Transient
+    private List<Long> idsWarehouse;
+
+    @Transient
+    private List<Long> tenantIds;
 
 }
 

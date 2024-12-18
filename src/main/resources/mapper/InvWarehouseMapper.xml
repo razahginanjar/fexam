@@ -95,6 +95,19 @@
             <if test="warehouseCode !=null">
                 and fiw.warehouse_code = #{warehouseCode,jdbcType = VARCHAR}
             </if>
+            <if test="idsWarehouse != null and idsWarehouse.size() > 0">
+                AND fiw.warehouse_id IN
+                <foreach collection="idsWarehouse" item="idWarehouse" open="(" separator="," close=")">
+                    #{idWarehouse}
+                </foreach>
+            </if>
+            <if test="tenantIds != null and tenantIds.size() > 0">
+                AND fiw.tenant_id IN
+                <foreach collection="tenantIds" item="tenantId" open="(" separator="," close=")">
+                    #{tenantId}
+                </foreach>
+            </if>
+
         </where>
     </select>
 </mapper>
