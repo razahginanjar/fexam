@@ -175,6 +175,7 @@ public class InvCountHeader extends AuditDomain {
     private Integer delFlag;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {CreateCheck.class})
     private Long departmentId;
 
     @ApiModelProperty(value = "")

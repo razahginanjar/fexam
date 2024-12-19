@@ -1,5 +1,6 @@
 package com.hand.demo.app.service.impl;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.IamCompany;
 import com.hand.demo.domain.repository.IamCompanyRepository;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +35,20 @@ public class IamCompanyServiceImpl implements IamCompanyService {
         List<IamCompany> updateList = iamCompanys.stream().filter(line -> line.getCompanyId() != null).collect(Collectors.toList());
         iamCompanyRepository.batchInsertSelective(insertList);
         iamCompanyRepository.batchUpdateByPrimaryKeySelective(updateList);
+    }
+
+    @Override
+    public Map<Long, IamCompany> byIdsFromHeader(List<InvCountHeaderDTO> headerDTOS) {
+        Set<String> companyIds = headerDTOS.stream()
+                .map(header -> header.getCompanyId().toString())
+                .collect(Collectors.toSet());
+        String join = String.join(",", companyIds);
+        List<IamCompany> iamCompanies = iamCompanyRepository.selectByIds(join);
+        Map<Long, IamCompany> iamCompanyMap = new HashMap<>();
+        for (IamCompany iamCompany : iamCompanies) {
+            iamCompanyMap.put(iamCompany.getCompanyId(), iamCompany);
+        }
+        return iamCompanyMap;
     }
 }
 

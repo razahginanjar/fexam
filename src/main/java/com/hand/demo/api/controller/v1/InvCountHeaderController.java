@@ -67,7 +67,7 @@ public class InvCountHeaderController extends BaseController {
         return Results.success(detail);
     }
 
-    @ApiOperation(value = "orderSave")
+    @ApiOperation(value = "order save")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping
     public ResponseEntity<InvCountInfoDTO> orderSave(@PathVariable Long organizationId,
@@ -75,6 +75,43 @@ public class InvCountHeaderController extends BaseController {
         SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
         invCountHeaders.forEach(item -> item.setTenantId(organizationId));
         InvCountInfoDTO invCountInfoDTO = invCountHeaderService.orderSave(invCountHeaders);
+        return Results.success(invCountInfoDTO);
+    }
+
+    @ApiOperation(value = "order execution")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @PostMapping(path = "/execute")
+    public ResponseEntity<InvCountInfoDTO> orderExecution(@PathVariable Long organizationId,
+                                                     @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
+        SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
+        invCountHeaders.forEach(item -> item.setTenantId(organizationId));
+        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.orderExecution(invCountHeaders);
+        return Results.success(invCountInfoDTO);
+    }
+
+    @ApiOperation(value = "count result sync")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @PostMapping(path = "/result-sync")
+    public ResponseEntity<InvCountHeaderDTO> countResultSync(@PathVariable Long organizationId,
+                                                          @RequestBody InvCountHeaderDTO invCountHeader) {
+        invCountHeader.setTenantId(organizationId);
+        InvCountHeaderDTO invCountHeaderDTO = invCountHeaderService.countResultSync(invCountHeader);
+        return Results.success(invCountHeaderDTO);
+    }
+
+    @ApiOperation(value = "order submit")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @PostMapping(path = "/submit")
+    public ResponseEntity<InvCountInfoDTO> orderSubmit(@PathVariable Long organizationId,
+                                                             @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
+        invCountHeaders.forEach(item ->
+                {
+                    if(item.getTenantId() == null){
+                        item.setTenantId(organizationId);
+                    }
+                }
+        );
+        InvCountInfoDTO invCountInfoDTO = invCountHeaderService.orderSubmit(invCountHeaders);
         return Results.success(invCountInfoDTO);
     }
 

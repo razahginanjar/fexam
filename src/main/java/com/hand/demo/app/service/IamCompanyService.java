@@ -1,10 +1,12 @@
 package com.hand.demo.app.service;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.IamCompany;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * (IamCompany)应用服务
@@ -29,6 +31,6 @@ public interface IamCompanyService {
      * @param iamCompanys 数据
      */
     void saveData(List<IamCompany> iamCompanys);
-
+    Map<Long, IamCompany> byIdsFromHeader(List<InvCountHeaderDTO> headerDTOS);
 }
 

@@ -1,10 +1,12 @@
 package com.hand.demo.app.service;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.IamDepartment;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * (IamDepartment)应用服务
@@ -29,6 +31,6 @@ public interface IamDepartmentService {
      * @param iamDepartments 数据
      */
     void saveData(List<IamDepartment> iamDepartments);
-
+    Map<Long, IamDepartment> getFromHeaders(List<InvCountHeaderDTO> headerDTOS);
 }
 

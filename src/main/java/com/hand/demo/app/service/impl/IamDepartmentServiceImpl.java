@@ -1,5 +1,7 @@
 package com.hand.demo.app.service.impl;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
+import com.hand.demo.domain.entity.InvWarehouse;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -9,7 +11,7 @@ import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.IamDepartment;
 import com.hand.demo.domain.repository.IamDepartmentRepository;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +36,22 @@ public class IamDepartmentServiceImpl implements IamDepartmentService {
         List<IamDepartment> updateList = iamDepartments.stream().filter(line -> line.getDepartmentId() != null).collect(Collectors.toList());
         iamDepartmentRepository.batchInsertSelective(insertList);
         iamDepartmentRepository.batchUpdateByPrimaryKeySelective(updateList);
+    }
+
+    @Override
+    public Map<Long, IamDepartment> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
+        Set<String> departementIds = headerDTOS.stream()
+                .map(header ->
+                    header.getDepartmentId().toString()
+                )
+                .collect(Collectors.toSet());
+        String departement = String.join(",", departementIds);
+        List<IamDepartment> invWarehouses = iamDepartmentRepository.selectByIds(departement);
+        Map<Long, IamDepartment> invWarehouseMap = new HashMap<>();
+        for (IamDepartment iamDepartment : invWarehouses) {
+            invWarehouseMap.put(iamDepartment.getDepartmentId(), iamDepartment);
+        }
+        return invWarehouseMap;
     }
 }
 

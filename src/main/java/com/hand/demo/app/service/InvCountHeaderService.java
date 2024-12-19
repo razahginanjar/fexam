@@ -43,5 +43,7 @@ public interface InvCountHeaderService extends AopProxy<InvCountHeaderService> {
     InvCountInfoDTO submitCheck(List<InvCountHeaderDTO> headerDTOS);
     List<InvCountHeaderDTO> submit(List<InvCountHeaderDTO> headerDTOS);
     InvCountInfoDTO orderSave(List<InvCountHeaderDTO> headerDTOS);
+    InvCountInfoDTO orderExecution(List<InvCountHeaderDTO> headerDTOS);
+    InvCountInfoDTO orderSubmit(List<InvCountHeaderDTO> headerDTOS);
 }
 

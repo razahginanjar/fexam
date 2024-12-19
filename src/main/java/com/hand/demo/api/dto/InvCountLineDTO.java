@@ -18,4 +18,10 @@ public class InvCountLineDTO extends InvCountLine {
     private String materialCode;
 
     private List<Long> idsHeader;
+
+    private boolean tenantAdminFlag = false;
+
+    private Long userId;
+
+    private String supervisorIds;
 }

@@ -31,7 +31,7 @@ public class InvCountExtraServiceImpl implements InvCountExtraService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.NESTED)
+    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRES_NEW)
     public void saveData(List<InvCountExtra> invCountExtras) {
         List<InvCountExtra> insertList = invCountExtras.stream().filter(line -> line.getExtraInfoId() == null).collect(Collectors.toList());
         List<InvCountExtra> updateList = invCountExtras.stream().filter(line -> line.getExtraInfoId() != null).collect(Collectors.toList());
