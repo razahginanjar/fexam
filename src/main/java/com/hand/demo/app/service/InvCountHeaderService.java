@@ -3,6 +3,7 @@ package com.hand.demo.app.service;
 import com.hand.demo.api.dto.InvCountHeaderDTO;
 import com.hand.demo.api.dto.InvCountInfoDTO;
 import com.hand.demo.api.dto.InvCountLineDTO;
+import com.hand.demo.api.dto.WorkFlowEventDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.InvCountHeader;
@@ -45,6 +46,6 @@ public interface InvCountHeaderService extends AopProxy<InvCountHeaderService> {
     InvCountInfoDTO orderSave(List<InvCountHeaderDTO> headerDTOS);
     InvCountInfoDTO orderExecution(List<InvCountHeaderDTO> headerDTOS);
     InvCountInfoDTO orderSubmit(List<InvCountHeaderDTO> headerDTOS);
-    void callbackHeader(Wor)
+    void callbackHeader(WorkFlowEventDTO workFlowEventDTO);
 }
 

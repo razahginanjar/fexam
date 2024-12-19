@@ -629,8 +629,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             }
             invCountHeaderRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(headerDTOS));
         }
-
-
         return Collections.emptyList();
     }
 
@@ -671,7 +669,8 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         if(invCountInfoDTO.getErrorList() == null || invCountInfoDTO.getErrorList().isEmpty()){
             InvCountInfoDTO submitCheck = self().submitCheck(invCountInfoDTO.getSuccessList());
             if(submitCheck.getErrorList() == null || submitCheck.getErrorList() .isEmpty()){
-                return self().orderSubmit(submitCheck.getSuccessList());
+                List<InvCountHeaderDTO> submit = self().submit(submitCheck.getSuccessList());
+                return
             }else {
                 invCountInfoDTO.setErrorList(submitCheck.getErrorList());
                 //needed this if there is error and success
@@ -681,6 +680,28 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             }
         }
         return invCountInfoDTO;
+    }
+
+    @Override
+    public void callbackHeader(WorkFlowEventDTO workFlowEventDTO) {
+        InvCountHeaderDTO invCountHeaderDTO = new InvCountHeaderDTO();
+        invCountHeaderDTO.setCountNumber(workFlowEventDTO.getBusinessKey());
+        InvCountHeader invCountHeader = invCountHeaderRepository.selectOne(invCountHeaderDTO);
+        invCountHeader.setCountStatus(workFlowEventDTO.getDocStatus());
+        invCountHeader.setWorkflowId(workFlowEventDTO.getWorkflowId());
+        UserVO userSelf = getUserSelf();
+
+        invCountHeader.setWorkflowId(workFlowEventDTO.getWorkflowId());
+        if(workFlowEventDTO.getDocStatus().equals("APPROVED")){
+            invCountHeader.setApprovedTime(workFlowEventDTO.getApprovedTime());
+        }
+
+        if(workFlowEventDTO.getDocStatus().equals("PROCESSING")){
+            Long id = userSelf.getId();
+            invCountHeader.setSupervisorIds(String.valueOf(id));
+        }
+
+        invCountHeaderRepository.updateByPrimaryKeySelective(invCountHeader);
     }
 
     public void setCreateLineToHeader(InvCountHeaderDTO invCountHeaderDTO,
