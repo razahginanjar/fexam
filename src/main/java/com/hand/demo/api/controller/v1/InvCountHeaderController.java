@@ -2,6 +2,7 @@ package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.dto.InvCountHeaderDTO;
 import com.hand.demo.api.dto.InvCountInfoDTO;
+import com.hand.demo.api.dto.WorkFlowEventDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -114,6 +115,16 @@ public class InvCountHeaderController extends BaseController {
         InvCountInfoDTO invCountInfoDTO = invCountHeaderService.orderSubmit(invCountHeaders);
         return Results.success(invCountInfoDTO);
     }
+
+    @ApiOperation(value = "callback submit")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @PostMapping(path = "/callback")
+    public ResponseEntity<InvCountHeaderDTO> callback(@PathVariable Long organizationId,
+                                                      @RequestBody WorkFlowEventDTO invCountHeader) {
+
+        return Results.success();
+    }
+
 
 
     @ApiOperation(value = "orderRemove")
