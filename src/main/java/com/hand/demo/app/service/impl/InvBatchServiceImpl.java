@@ -1,5 +1,7 @@
 package com.hand.demo.app.service.impl;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
+import com.hand.demo.domain.entity.InvMaterial;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -9,7 +11,7 @@ import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvBatch;
 import com.hand.demo.domain.repository.InvBatchRepository;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +36,34 @@ public class InvBatchServiceImpl implements InvBatchService {
         List<InvBatch> updateList = invBatchs.stream().filter(line -> line.getBatchId() != null).collect(Collectors.toList());
         invBatchRepository.batchInsertSelective(insertList);
         invBatchRepository.batchUpdateByPrimaryKeySelective(updateList);
+    }
+
+    @Override
+    public Map<Long, InvBatch> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
+        StringBuilder ids = new StringBuilder();
+        for (InvCountHeaderDTO headerDTO : headerDTOS) {
+            String snapshotBatchIds = headerDTO.getSnapshotBatchIds();
+            ids.append(snapshotBatchIds).append(",");
+        }
+        Set<Long> idBatchsLong = new HashSet<>();
+        String[] split = ids.toString().split(",(?=\\S|$)");
+        for (String s : split) {
+            idBatchsLong.add(Long.valueOf(s));
+        }
+        StringBuilder result = new StringBuilder();
+        for (Long l : idBatchsLong) {
+            result.append(l).append(",");
+        }
+        // Remove the trailing comma if it exists
+        if (result.length() > 0) {
+            result.deleteCharAt(result.length() - 1);
+        }
+        List<InvBatch> invBatches = invBatchRepository.selectByIds(result.toString());
+        Map<Long, InvBatch> invBatchMap = new HashMap<>();
+        for (InvBatch invBatch : invBatches) {
+            invBatchMap.put(invBatch.getBatchId(), invBatch);
+        }
+        return invBatchMap;
     }
 }
 

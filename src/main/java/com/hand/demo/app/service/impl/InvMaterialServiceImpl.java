@@ -1,5 +1,6 @@
 package com.hand.demo.app.service.impl;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvMaterial;
 import com.hand.demo.domain.repository.InvMaterialRepository;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +35,34 @@ public class InvMaterialServiceImpl implements InvMaterialService {
         List<InvMaterial> updateList = invMaterials.stream().filter(line -> line.getMaterialId() != null).collect(Collectors.toList());
         invMaterialRepository.batchInsertSelective(insertList);
         invMaterialRepository.batchUpdateByPrimaryKeySelective(updateList);
+    }
+
+    @Override
+    public Map<Long, InvMaterial> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
+        StringBuilder ids = new StringBuilder();
+        for (InvCountHeaderDTO headerDTO : headerDTOS) {
+            String snapshotMaterialIds = headerDTO.getSnapshotMaterialIds();
+            ids.append(snapshotMaterialIds).append(",");
+        }
+        Set<Long> idsLong = new HashSet<>();
+        String[] split = ids.toString().split(",(?=\\S|$)");
+        for (String s : split) {
+            idsLong.add(Long.valueOf(s));
+        }
+        StringBuilder result = new StringBuilder();
+        for (Long l : idsLong) {
+            result.append(l).append(",");
+        }
+        // Remove the trailing comma if it exists
+        if (result.length() > 0) {
+            result.deleteCharAt(result.length() - 1);
+        }
+        List<InvMaterial> invMaterials = invMaterialRepository.selectByIds(result.toString());
+        Map<Long, InvMaterial> invMaterialMap = new HashMap<>();
+        for (InvMaterial invMaterial : invMaterials) {
+            invMaterialMap.put(invMaterial.getMaterialId(), invMaterial);
+        }
+        return invMaterialMap;
     }
 }
 

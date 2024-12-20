@@ -46,6 +46,7 @@ public interface InvCountHeaderService extends AopProxy<InvCountHeaderService> {
     InvCountInfoDTO orderSave(List<InvCountHeaderDTO> headerDTOS);
     InvCountInfoDTO orderExecution(List<InvCountHeaderDTO> headerDTOS);
     InvCountInfoDTO orderSubmit(List<InvCountHeaderDTO> headerDTOS);
+    List<InvCountHeaderDTO> report(InvCountHeaderDTO invCountHeaderDTO);
     void callbackHeader(WorkFlowEventDTO workFlowEventDTO);
 }
 

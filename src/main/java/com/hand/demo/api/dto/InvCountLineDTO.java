@@ -24,4 +24,11 @@ public class InvCountLineDTO extends InvCountLine {
     private Long userId;
 
     private String supervisorIds;
+
+    private List<UserDTO> counterList;
+
+    //for report
+    private String counterNames;
+    private String itemName;
+    private String batchCode;
 }

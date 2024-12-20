@@ -15,6 +15,8 @@ import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
 import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.core.util.Results;
+import org.hzero.export.annotation.ExcelExport;
+import org.hzero.export.vo.ExportParam;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +27,8 @@ import com.hand.demo.domain.entity.InvCountHeader;
 import com.hand.demo.domain.repository.InvCountHeaderRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
+import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -119,10 +123,10 @@ public class InvCountHeaderController extends BaseController {
     @ApiOperation(value = "callback submit")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping(path = "/callback")
-    public ResponseEntity<InvCountHeaderDTO> callback(@PathVariable Long organizationId,
-                                                      @RequestBody WorkFlowEventDTO invCountHeader) {
-
-        return Results.success();
+    public ResponseEntity<?> callback(@PathVariable Long organizationId,
+                                                      @RequestBody WorkFlowEventDTO workFlowEventDTO) {
+        invCountHeaderService.callbackHeader(workFlowEventDTO);
+        return Results.success("data status is change " + workFlowEventDTO.getDocStatus());
     }
 
 
@@ -137,5 +141,19 @@ public class InvCountHeaderController extends BaseController {
         return Results.success(invCountInfoDTO);
     }
 
+    @ApiOperation(value = "Report")
+    @ProcessLovValue(targetField = BaseConstants.FIELD_BODY)
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping(
+            path = "/report"
+    )
+    public ResponseEntity<List<InvCountHeaderDTO>> countingOrderReportDs(
+            @PathVariable Long organizationId,
+            InvCountHeaderDTO invCountHeaderDTO) {
+        invCountHeaderDTO1.setCounterNames();
+        invCountHeaderDTO1.setSuperVisorNames();
+//        invCountHeaderService.
+        return Results.success(new ArrayList<>());
+    }
 }
 

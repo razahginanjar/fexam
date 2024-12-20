@@ -1,10 +1,12 @@
 package com.hand.demo.app.service;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import com.hand.demo.domain.entity.InvBatch;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * (InvBatch)应用服务
@@ -29,6 +31,7 @@ public interface InvBatchService {
      * @param invBatchs 数据
      */
     void saveData(List<InvBatch> invBatchs);
+    Map<Long, InvBatch> getFromHeaders(List<InvCountHeaderDTO> headerDTOS);
 
 }
 
