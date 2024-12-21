@@ -1,6 +1,8 @@
 package com.hand.demo.infra.repository.impl;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
 import com.hand.demo.api.dto.InvCountLineDTO;
+import com.hand.demo.api.dto.UserDTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
@@ -11,6 +13,7 @@ import com.hand.demo.domain.repository.InvCountLineRepository;
 import com.hand.demo.infra.mapper.InvCountLineMapper;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -29,7 +32,18 @@ public class InvCountLineRepositoryImpl extends BaseRepositoryImpl<InvCountLine>
 
     @Override
     public List<InvCountLineDTO> selectList(InvCountLineDTO invCountLine) {
-        return invCountLineMapper.selectList(invCountLine);
+        List<InvCountLineDTO> invCountLineDTOS = invCountLineMapper.selectList(invCountLine);
+        for (InvCountLineDTO invCountLineDTO : invCountLineDTOS) {
+            String[] counterSplit = invCountLineDTO.getCounterIds().split(",");
+            List<UserDTO> counterUsers = new ArrayList<>();
+            for (String s : counterSplit) {
+                UserDTO userDTO = new UserDTO();
+                userDTO.setUserId(Long.parseLong(s));
+                counterUsers.add(userDTO);
+            }
+            invCountLineDTO.setCounterList(counterUsers);
+        }
+        return invCountLineDTOS;
     }
 
     @Override

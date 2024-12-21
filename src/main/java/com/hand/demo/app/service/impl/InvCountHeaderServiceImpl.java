@@ -755,6 +755,21 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     @Override
     @ProcessCacheValue
     public List<InvCountHeaderDTO> report(InvCountHeaderDTO invCountHeaderDTO) {
+
+        if(invCountHeaderDTO.getCompanyCode() != null){
+            IamCompany iamCompany = iamCompanyRepository.selectOne(new IamCompany().setCompanyCode(invCountHeaderDTO.getCompanyCode()));
+            invCountHeaderDTO.setCompanyId(iamCompany.getCompanyId());
+        }
+        if(invCountHeaderDTO.getDepartmentCode() != null){
+            IamDepartment iamDepartment = iamDepartmentRepository.selectOne(new IamDepartment().setDepartmentCode(invCountHeaderDTO.getDepartmentCode()));
+            invCountHeaderDTO.setDepartmentId(iamDepartment.getDepartmentId());
+        }
+        if(invCountHeaderDTO.getWareHouseCode() != null){
+            InvWarehouse invWarehouse = invWarehouseRepository.selectOne(new InvWarehouse().setWarehouseCode(invCountHeaderDTO.getWareHouseCode()));
+            invCountHeaderDTO.setWarehouseId(invWarehouse.getWarehouseId());
+        }
+
+
         List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderRepository.selectList(invCountHeaderDTO);
 
         Map<Long, IamDepartment> iamDepartmentMap = iamDepartmentService.getFromHeaders(invCountHeaderDTOS);
@@ -780,10 +795,27 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
                     List<RunTaskHistory> history = workflowService.getHistory(invCountHeaderDTO1.getTenantId(), Constants.FLOW_KEY_CODE, invCountHeaderDTO1.getCountNumber());
                     invCountHeaderDTO1.setHistoryApproval(history);
 
+                    String mCodes = materials.stream()
+                            .map(SnapShotMaterialDTO::getCode)
+                            .collect(Collectors.joining(", "));
+
+                    String bCodes = batches.stream()
+                            .map(SnapShotBatchDTO::getCode)
+                            .collect(Collectors.joining(", "));
+
+                    invCountHeaderDTO1.setMaterialCodes(mCodes);
+                    invCountHeaderDTO1.setBatchCodes(bCodes);
+                    invCountHeaderDTO1.setTena
+
                     invCountHeaderDTO1.setCountOrderLineList(new ArrayList<>(lineMap.get(invCountHeaderDTO1.getCountHeaderId()).values()));
                     List<InvCountLineDTO> countOrderLineList = invCountHeaderDTO1.getCountOrderLineList();
+
                     for (InvCountLineDTO invCountLineDTO : countOrderLineList) {
-                        invCountLineDTO.set
+                        invCountLineDTO.setItemName(invMaterialMap.get(invCountLineDTO.getMaterialId()).getMaterialName());
+                        invCountLineDTO.setItemCode(invMaterialMap.get(invCountLineDTO.getMaterialId()).getMaterialCode());
+                        if(invCountLineDTO.getBatchId() != null){
+                            invCountLineDTO.setBatchCode(invBatchMap.get(invCountLineDTO.getBatchId()).getBatchCode());
+                        }
                     }
                 }
         );

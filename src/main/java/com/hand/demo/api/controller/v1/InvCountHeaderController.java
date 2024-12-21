@@ -1,8 +1,6 @@
 package com.hand.demo.api.controller.v1;
 
-import com.hand.demo.api.dto.InvCountHeaderDTO;
-import com.hand.demo.api.dto.InvCountInfoDTO;
-import com.hand.demo.api.dto.WorkFlowEventDTO;
+import com.hand.demo.api.dto.*;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -30,6 +28,7 @@ import springfox.documentation.annotations.ApiIgnore;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * (InvCountHeader)表控制层
@@ -150,10 +149,25 @@ public class InvCountHeaderController extends BaseController {
     public ResponseEntity<List<InvCountHeaderDTO>> countingOrderReportDs(
             @PathVariable Long organizationId,
             InvCountHeaderDTO invCountHeaderDTO) {
-        invCountHeaderDTO1.setCounterNames();
-        invCountHeaderDTO1.setSuperVisorNames();
-//        invCountHeaderService.
-        return Results.success(new ArrayList<>());
+
+        List<InvCountHeaderDTO> report = invCountHeaderService.report(invCountHeaderDTO);
+        for (InvCountHeaderDTO countHeaderDTO : report) {
+            String superVisorNames = countHeaderDTO.getSupervisorList().stream()
+                    .map(UserDTO::getRealName)
+                    .collect(Collectors.joining(", "));
+            String counterNames = countHeaderDTO.getCounterList().stream()
+                    .map(UserDTO::getRealName)
+                    .collect(Collectors.joining(", "));
+            countHeaderDTO.setSuperVisorNames(superVisorNames);
+            countHeaderDTO.setCounterNames(counterNames);
+            for (InvCountLineDTO invCountLineDTO : countHeaderDTO.getCountOrderLineList()) {
+                String counterLineNames = invCountLineDTO.getCounterList().stream()
+                        .map(UserDTO::getRealName)
+                        .collect(Collectors.joining(", "));
+                invCountLineDTO.setCounterLineNames(counterLineNames);
+            }
+        }
+        return Results.success(report);
     }
 }
 

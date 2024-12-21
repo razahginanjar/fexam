@@ -32,6 +32,5 @@ public interface InvMaterialService {
      */
     void saveData(List<InvMaterial> invMaterials);
     Map<Long, InvMaterial> getFromHeaders(List<InvCountHeaderDTO> headerDTOS);
-
 }
 

@@ -17,6 +17,7 @@ import java.util.Date;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * (IamDepartment)实体类
@@ -31,6 +32,7 @@ import lombok.Setter;
 @VersionAudit
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
+@Accessors(chain = true)
 @Table(name = "fexam_iam_department")
 public class IamDepartment extends AuditDomain {
     private static final long serialVersionUID = 444086274574518128L;

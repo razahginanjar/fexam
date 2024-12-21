@@ -171,6 +171,12 @@
             <if test="workflowId !=null">
                 and fich.workflow_id = #{workflowId,jdbcType = INTEGER}
             </if>
+            <if test="docStatuses != null and docStatuses.size() > 0">
+                AND fich.count_status IN
+                <foreach collection="docStatuses" item="docStatus" open="(" separator="," close=")">
+                    #{docStatus}
+                </foreach>
+            </if>
         </where>
     </select>
 </mapper>

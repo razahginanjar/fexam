@@ -17,6 +17,7 @@ import java.util.Date;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 
 /**
  * (IamCompany)实体类
@@ -31,6 +32,7 @@ import lombok.Setter;
 @VersionAudit
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
+@Accessors(chain = true)
 @Table(name = "fexam_iam_company")
 public class IamCompany extends AuditDomain {
     private static final long serialVersionUID = 764061864651074394L;
