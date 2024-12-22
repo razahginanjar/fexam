@@ -10,6 +10,8 @@ import com.hand.demo.app.service.InvBatchService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvBatch;
 import com.hand.demo.domain.repository.InvBatchRepository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,6 +41,7 @@ public class InvBatchServiceImpl implements InvBatchService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public Map<Long, InvBatch> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
         StringBuilder ids = new StringBuilder();
         for (InvCountHeaderDTO headerDTO : headerDTOS) {

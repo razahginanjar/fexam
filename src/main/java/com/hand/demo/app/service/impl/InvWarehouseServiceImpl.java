@@ -9,6 +9,8 @@ import com.hand.demo.app.service.InvWarehouseService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvWarehouse;
 import com.hand.demo.domain.repository.InvWarehouseRepository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ public class InvWarehouseServiceImpl implements InvWarehouseService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public Map<Long, InvWarehouse> getFromOrders(List<InvCountHeaderDTO> headerDTOS) {
         Set<String> warehouseIds = headerDTOS.stream()
                 .map(header -> header.getWarehouseId().toString())

@@ -1,5 +1,6 @@
 package com.hand.demo.infra.repository.impl;
 
+import com.hand.demo.api.dto.InvStockDTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.stereotype.Component;
@@ -8,6 +9,7 @@ import com.hand.demo.domain.repository.InvStockRepository;
 import com.hand.demo.infra.mapper.InvStockMapper;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -35,6 +37,11 @@ public class InvStockRepositoryImpl extends BaseRepositoryImpl<InvStock> impleme
             return null;
         }
         return invStocks.get(0);
+    }
+
+    @Override
+    public List<InvStockDTO> getSummarizeStock(InvStockDTO invStockDTO) {
+        return invStockMapper.selectAvailabilityQty(invStockDTO);
     }
 
 }

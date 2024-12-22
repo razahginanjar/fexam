@@ -10,6 +10,8 @@ import com.hand.demo.app.service.IamDepartmentService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.IamDepartment;
 import com.hand.demo.domain.repository.IamDepartmentRepository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -39,6 +41,7 @@ public class IamDepartmentServiceImpl implements IamDepartmentService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public Map<Long, IamDepartment> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
         Set<String> departementIds = headerDTOS.stream()
                 .map(header ->

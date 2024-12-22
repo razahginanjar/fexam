@@ -9,6 +9,8 @@ import com.hand.demo.app.service.InvMaterialService;
 import org.springframework.stereotype.Service;
 import com.hand.demo.domain.entity.InvMaterial;
 import com.hand.demo.domain.repository.InvMaterialRepository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -38,6 +40,7 @@ public class InvMaterialServiceImpl implements InvMaterialService {
     }
 
     @Override
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public Map<Long, InvMaterial> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
         StringBuilder ids = new StringBuilder();
         for (InvCountHeaderDTO headerDTO : headerDTOS) {

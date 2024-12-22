@@ -144,11 +144,11 @@ public class InvCountHeader extends AuditDomain {
     private Long companyId;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_DIMENSION)
+    @LovValue(lovCode = Constants.LOV_DIMENSION, groups = {UpdateCheck.class}, message = "Mismatch value lov dimension")
     private String countDimension;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_COUNT_MODE)
+    @LovValue(lovCode = Constants.LOV_COUNT_MODE, groups = {UpdateCheck.class}, message = "Mismatch value lov count")
     private String countMode;
 
     @ApiModelProperty(value = "", required = true)
@@ -156,7 +156,7 @@ public class InvCountHeader extends AuditDomain {
     private String countNumber;
 
     @ApiModelProperty(value = "", required = true)
-    @LovValue(lovCode = Constants.LOV_STATUS)
+    @LovValue(lovCode = Constants.LOV_STATUS, groups = {CreateCheck.class}, message = "Mismatch Status value lov")
     @NotBlank(groups = {CreateCheck.class})
     private String countStatus;
 
@@ -164,7 +164,7 @@ public class InvCountHeader extends AuditDomain {
     private String countTimeStr;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_COUNT_TYPE)
+    @LovValue(lovCode = Constants.LOV_COUNT_TYPE, groups = {UpdateCheck.class}, message = "Mismatch value type lov")
     private String countType;
 
     @ApiModelProperty(value = "")

@@ -1,6 +1,7 @@
 package com.hand.demo.app.service.impl;
 
 import com.hand.demo.api.dto.InvCountHeaderDTO;
+import com.hand.demo.api.dto.InvStockDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -11,6 +12,7 @@ import com.hand.demo.domain.entity.InvStock;
 import com.hand.demo.domain.repository.InvStockRepository;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,6 +58,28 @@ public class InvStockServiceImpl implements InvStockService {
             invStock.setBatchIds(batchIds);
         }
         return invStockRepository.selectList(invStock);
+    }
+
+    @Override
+    public List<InvStockDTO> getSummarizeStock(InvCountHeaderDTO invCountHeaderDTO) {
+        InvStockDTO invStockDTO = new InvStockDTO();
+        if(invCountHeaderDTO.getCountDimension().equals("LOT")){
+            invStockDTO.setLot(true);
+        }else {
+            invStockDTO.setLot(false);
+        }
+        String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
+        String[] split1 = snapshotMaterialIds.split(",");
+        List<Long> materialIds = Arrays.stream(split1).map(Long::parseLong).collect(Collectors.toList());
+        invStockDTO.setMaterialsId(materialIds);
+        String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
+        String[] split = snapshotBatchIds.split(",");
+        List<Long> batchIds = Arrays.stream(split).map(Long::parseLong).collect(Collectors.toList());
+        invStockDTO.setBatchIds(batchIds);
+        invStockDTO.setCompanyId(invCountHeaderDTO.getCompanyId());
+        invStockDTO.setDepartmentId(invCountHeaderDTO.getDepartmentId());
+        invStockDTO.setWarehouseId(invCountHeaderDTO.getWarehouseId());
+        return invStockRepository.getSummarizeStock(invStockDTO);
     }
 }
 

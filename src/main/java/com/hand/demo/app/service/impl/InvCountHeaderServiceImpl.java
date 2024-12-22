@@ -42,6 +42,7 @@ import java.time.Month;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * (InvCountHeader)应用服务
@@ -127,6 +128,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         }
         List<InvCountHeaderDTO> insertList = invCountHeaders.stream().filter(line -> line.getCountHeaderId() == null).collect(Collectors.toList());
         List<InvCountHeaderDTO> updateList = invCountHeaders.stream().filter(line -> line.getCountHeaderId() != null).collect(Collectors.toList());
+
         insertList.forEach(
                 invCountHeader -> {
                     Map<String, String> args = new HashMap<>();
@@ -135,8 +137,39 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
                     invCountHeader.setCountNumber(s);
                 }
         );
+
+        if(!updateList.isEmpty()){
+            List<InvCountHeaderDTO> draft = updateList.stream().filter(invCountHeaderDTO -> invCountHeaderDTO.getCountStatus().equals("DRAFT")).collect(Collectors.toList());
+            List<InvCountHeaderDTO> incounting = updateList.stream().filter(invCountHeaderDTO -> invCountHeaderDTO.getCountStatus().equals("INCOUNTING")).collect(Collectors.toList());
+            if(draft != null && !draft.isEmpty()){
+                invCountHeaderRepository.batchUpdateOptional(new ArrayList<>(draft)
+                , InvCountHeaderDTO.FIELD_COMPANY_ID, InvCountHeaderDTO.FIELD_DEPARTMENT_ID,
+                        InvCountHeaderDTO.FIELD_WAREHOUSE_ID, InvCountHeaderDTO.FIELD_COUNT_DIMENSION,
+                        InvCountHeaderDTO.FIELD_COUNT_TYPE, InvCountHeaderDTO.FIELD_COUNT_MODE,
+                        InvCountHeaderDTO.FIELD_COUNT_TIME_STR, InvCountHeaderDTO.FIELD_COUNTER_IDS,
+                        InvCountHeaderDTO.FIELD_SUPERVISOR_IDS, InvCountHeaderDTO.FIELD_SNAPSHOT_MATERIAL_IDS,
+                        InvCountHeaderDTO.FIELD_SNAPSHOT_BATCH_IDS, InvCountHeaderDTO.FIELD_REMARK);
+            }
+
+            if(incounting != null && !incounting.isEmpty()){
+                invCountHeaderRepository.batchUpdateOptional(new ArrayList<>(incounting)
+                        , InvCountHeaderDTO.FIELD_REMARK, InvCountHeaderDTO.FIELD_REASON);
+
+                for (InvCountHeaderDTO invCountHeaderDTO : incounting) {
+                    if(invCountHeaderDTO.getCountOrderLineList() != null){
+                        invCountLineRepository.batchUpdateOptional(
+                                new ArrayList<>(invCountHeaderDTO.getCountOrderLineList()),
+                                InvCountLineDTO.FIELD_REMARK,
+                                InvCountLineDTO.FIELD_COUNTER_IDS,
+                                InvCountLineDTO.FIELD_UNIT_DIFF_QTY,
+                                InvCountLineDTO.FIELD_UNIT_QTY
+                        );
+                    }
+                }
+            }
+        }
+
         invCountHeaderRepository.batchInsertSelective(new ArrayList<>(insertList));
-        invCountHeaderRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(updateList));
         return invCountHeaders;
     }
 
@@ -249,20 +282,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             return invCountHeaderDTO;
     }
 
-    public void validateLOVs(StringBuilder errMsg,
-                             InvCountHeaderDTO invCountHeaderDTO,
-                             Map<String, Map<String, String>> mapLov) {
-        Map<String, String> statusMap = mapLov.get(Constants.LOV_STATUS);
-        Map<String, String> typeMap = mapLov.get(Constants.LOV_COUNT_TYPE);
-        Map<String, String> countModeMap = mapLov.get(Constants.LOV_COUNT_MODE);
-        Map<String, String> dimensionMap = mapLov.get(Constants.LOV_DIMENSION);
-        if(!statusMap.containsKey(invCountHeaderDTO.getCountStatus())) {
-            errMsg.append("Status Doesn't exists in Lov");
-        }
-        if(!typeMap.containsKey(invCountHeaderDTO.getCountType())) {
-            errMsg.append("Type Doesn't exists in Lov");
-        }
-
+    public void validateLOVs(InvCountHeaderDTO invCountHeaderDTO) {
         if(invCountHeaderDTO.getCountType().equals("YEAR")) {
             invCountHeaderDTO.setCountTimeStr(String.valueOf(Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().getYear()));
         }else {
@@ -270,13 +290,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             int value = month.getValue();
             int year = Instant.now().atZone(ZoneId.systemDefault()).toLocalDate().getYear();
             invCountHeaderDTO.setCountTimeStr(year + "-" + value);
-        }
-
-        if(!countModeMap.containsKey(invCountHeaderDTO.getCountMode())) {
-            errMsg.append("Mode Doesn't exists in Lov");
-        }
-        if(!dimensionMap.containsKey(invCountHeaderDTO.getCountDimension())) {
-            errMsg.append("Dimension Doesn't exists in Lov");
         }
     }
 
@@ -337,8 +350,9 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         if(headerDTOS == null || headerDTOS.isEmpty()){
             return null;
         }
+        validList(headerDTOS, InvCountHeaderDTO.UpdateCheck.class);
         Map<Long, InvCountHeader> invCountHeaderMap = selectByIds(headerDTOS);
-        Map<String, Map<String, String>> stringMapMap = lovStatus();
+//        Map<String, Map<String, String>> stringMapMap = lovStatus();
         CustomUserDetails userDetails = DetailsHelper.getUserDetails();
         Map<Long, IamCompany> iamCompanyMap = iamCompanyService.byIdsFromHeader(headerDTOS);
         Map<Long, InvWarehouse> invWarehouseMap = invWarehouseService.getFromOrders(headerDTOS);
@@ -348,22 +362,22 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             StringBuilder errMsg = new StringBuilder();
             if(!invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountStatus().equals("DRAFT"))
             {
-                errMsg.append(" Only draft status can execute");
+                errMsg.append("Only draft status can execute.");
             }
             if(!Objects.equals(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCreatedBy(), userDetails.getUserId()))
             {
-                errMsg.append("Only the document creator can execute");
+                errMsg.append("Only the document creator can execute.");
             }
-            validateLOVs(errMsg, headerDTO, stringMapMap);
+            validateLOVs(headerDTO);
             validateComDepaWare(headerDTO, errMsg, iamDepartmentMap, iamCompanyMap, invWarehouseMap);
             validateAvailability(headerDTO, errMsg);
             if(headerDTO.getSupervisorIds().isEmpty())
             {
-                errMsg.append("Supervisor cannot be empty");
+                errMsg.append("Supervisor cannot be empty.");
             }
             if(headerDTO.getCounterIds().isEmpty())
             {
-                errMsg.append("Counter cannot be empty");
+                errMsg.append("Counter cannot be empty.");
             }
         }
         return getTheInfo(headerDTOS);
@@ -387,8 +401,8 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
 
         headerDTOS.forEach(
                 invCountHeaderDTO -> {
-                    List<InvStock> invStocks = invStockService.getListStockAccordingHeader(invCountHeaderDTO);
-                    setCreateLineToHeader(invCountHeaderDTO, invStocks);
+                    List<InvStockDTO> summarizeStock = invStockService.getSummarizeStock(invCountHeaderDTO);
+                    setCreateLineToHeader(invCountHeaderDTO, summarizeStock);
                     if(invCountHeaderDTO.getCountOrderLineList() != null && !invCountHeaderDTO.getCountOrderLineList().isEmpty())
                     {
                         invCountLineService.saveData(invCountHeaderDTO.getCountOrderLineList());
@@ -595,7 +609,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
 
     @Override
     public InvCountInfoDTO submitCheck(List<InvCountHeaderDTO> headerDTOS) {
-        List<String> statusNeeded = new ArrayList<>(lovStatus().get(Constants.LOV_STATUS).values());
+//        List<String> statusNeeded = new ArrayList<>(lovStatus().get(Constants.LOV_STATUS).values());
         CustomUserDetails userDetails = DetailsHelper.getUserDetails();
         Map<Long, Map<Long, InvCountLineDTO>> linesMap = mappingLine(headerDTOS);
 
@@ -603,7 +617,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             boolean isPresentReason = false;
             StringBuilder errMsg = new StringBuilder();
             String countStatus = headerDTO.getCountStatus();
-            if(!statusNeeded.contains(countStatus) && !countStatus.equals("PROCESSING") && !countStatus.equals("WITHDRAWN")
+            if(!countStatus.equals("PROCESSING") && !countStatus.equals("WITHDRAWN")
             && !countStatus.equals("INCOUNTING") && !countStatus.equals("REJECTED")){
                 errMsg.append("The operation is allowed only when the status in in counting, processing, rejected, withdrawn.");
             }
@@ -732,6 +746,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             SnapShotMaterialDTO snapShotMaterialDTO = new SnapShotMaterialDTO();
             snapShotMaterialDTO.setId(idsMat);
             snapShotMaterialDTO.setCode(invMaterial.getMaterialCode());
+            result.add(snapShotMaterialDTO);
         }
         return result;
     }
@@ -745,15 +760,17 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         List<SnapShotBatchDTO> result = new ArrayList<>();
         for (Long idsMat : idsBatch) {
             InvBatch invBatch = invBatchMap.get(idsMat);
-            SnapShotMaterialDTO snapShotMaterialDTO = new SnapShotMaterialDTO();
-            snapShotMaterialDTO.setId(idsMat);
-            snapShotMaterialDTO.setCode(invBatch.getBatchCode());
+            SnapShotBatchDTO snapShotBatchDTO = new SnapShotBatchDTO();
+            snapShotBatchDTO.setId(idsMat);
+            snapShotBatchDTO.setCode(invBatch.getBatchCode());
+            result.add(snapShotBatchDTO);
         }
         return result;
     }
 
     @Override
     @ProcessCacheValue
+    @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public List<InvCountHeaderDTO> report(InvCountHeaderDTO invCountHeaderDTO) {
 
         if(invCountHeaderDTO.getCompanyCode() != null){
@@ -805,7 +822,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
 
                     invCountHeaderDTO1.setMaterialCodes(mCodes);
                     invCountHeaderDTO1.setBatchCodes(bCodes);
-                    invCountHeaderDTO1.setTena
 
                     invCountHeaderDTO1.setCountOrderLineList(new ArrayList<>(lineMap.get(invCountHeaderDTO1.getCountHeaderId()).values()));
                     List<InvCountLineDTO> countOrderLineList = invCountHeaderDTO1.getCountOrderLineList();
@@ -845,21 +861,27 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     }
 
     public void setCreateLineToHeader(InvCountHeaderDTO invCountHeaderDTO,
-                                List<InvStock> stocks)
+                                List<InvStockDTO> stocks)
     {
         List<InvCountLineDTO> saveLine = new ArrayList<>();
         Integer number = 1;
-        for (InvStock stock : stocks) {
+        for (InvStockDTO stock : stocks) {
             InvCountLineDTO invCountLineDTO = new InvCountLineDTO();
             invCountLineDTO.setTenantId(stock.getTenantId());
             invCountLineDTO.setLineNumber(number);
             invCountLineDTO.setWarehouseId(stock.getWarehouseId());
+
             invCountLineDTO.setMaterialId(stock.getMaterialId());
-            invCountLineDTO.setBatchId(stock.getBatchId());
+            if(stock.getBatchId() != null){
+                invCountLineDTO.setBatchId(stock.getBatchId());
+            }
+
             invCountLineDTO.setCountHeaderId(invCountHeaderDTO.getCountHeaderId());
             invCountLineDTO.setUnitCode(stock.getUnitCode());
             invCountLineDTO.setMaterialCode(stock.getMaterialCode());
-            invCountLineDTO.setSnapshotUnitQty(stock.getAvailableQuantity());
+
+            //available qty
+            invCountLineDTO.setSnapshotUnitQty(stock.getSummary());
             invCountLineDTO.setCounterIds(invCountHeaderDTO.getCounterIds());
             saveLine.add(invCountLineDTO);
             number++;
@@ -950,6 +972,8 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
 
         Map<Long, InvWarehouse> invWarehouseMap = invWarehouseService.getFromOrders(headerDTOS);
 
+        Map<Long, Map<Long, InvCountLineDTO>> lineMap = mappingLine(headerDTOS);
+
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             StringBuilder errMsg = new StringBuilder();
 
@@ -959,17 +983,15 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             if(headerDTO.getWarehouseId() == null){
                 headerDTO.setWarehouseId(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getWarehouseId());
             }
-            if(headerDTO.getSnapshotMaterialIds() == null){
-                headerDTO.setSnapshotMaterialIds(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getSnapshotMaterialIds());
-            }
-            if(headerDTO.getSnapshotBatchIds() == null){
-                headerDTO.setSnapshotBatchIds(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getSnapshotBatchIds());
-            }
+
 
             if(!statuses.contains(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountStatus())) {
                 errMsg.append("Only draft, in counting, rejected, and withdrawn status can be modified.");
             }
 
+            if(headerDTO.getCountStatus() != null){
+                errMsg.append("The status cannot be allowed to change");
+            }
             if(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountStatus().equals("DRAFT")
                     && !Objects.equals(invCountHeaderMap
                     .get(headerDTO.getCountHeaderId()).getCreatedBy(), userId)) {
@@ -992,6 +1014,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
                  !Objects.equals(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCreatedBy(), userId)) {
                     errMsg.append("Only the document creator, counter, and supervisor can modify the document for the status  of in counting, rejected, withdrawn.");
                 }
+
             }
 
             if(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountStatus().equals("DRAFT")
@@ -999,22 +1022,36 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
                     && !headerDTO.getReason().isEmpty()){
                 errMsg.append("Only the document in status of in counting, rejected, withdrawn, that can change or add the reason.");
             }
-            headerDTO.setErrorMsg(errMsg.toString());
+
+            if(headerDTO.getSnapshotMaterialIds() == null){
+                headerDTO.setSnapshotMaterialIds(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getSnapshotMaterialIds());
+            }
+            if(headerDTO.getSnapshotBatchIds() == null){
+                headerDTO.setSnapshotBatchIds(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getSnapshotBatchIds());
+            }
 
             List<InvCountLineDTO> invCountLineDTOList = headerDTO.getCountOrderLineList();
-            List<InvStock> stocks = invStockService.getListStockAccordingHeader(headerDTO);
 
-            for (InvCountLineDTO invCountLineDTO : invCountLineDTOList) {
-                if(invCountLineDTO.getTenantId() == null){
-                    invCountLineDTO.setTenantId(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getTenantId());
-                }
-                if(invCountLineDTO.getCountHeaderId() == null){
-                    invCountLineDTO.setCountHeaderId(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountHeaderId());
-                }
-                // update line for save method
-//                invCountLineDTO.setSnapshotUnitQty()
+            if(headerDTO.getCountOrderLineList() != null){
+                for (InvCountLineDTO invCountLineDTO : invCountLineDTOList) {
+                    if(invCountLineDTO.getTenantId() == null){
+                        invCountLineDTO.setTenantId(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getTenantId());
+                    }
+                    if(invCountLineDTO.getCountHeaderId() == null){
+                        invCountLineDTO.setCountHeaderId(headerDTO.getCountHeaderId());
+                    }
 
+                    if(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountStatus().equals("INCOUNTING")) {
+                        if(invCountLineDTO.getUnitQty() != null){
+                            BigDecimal subtract = invCountLineDTO.getUnitQty().subtract(lineMap.get(headerDTO.getCountHeaderId()).get(invCountLineDTO.getCountLineId()).getSnapshotUnitQty());
+                            invCountLineDTO.setUnitDiffQty(subtract);
+                        }
+                    }
+                }
+
+                validList(headerDTO.getCountOrderLineList(), InvCountLine.UpdateCheck.class);
             }
+            headerDTO.setErrorMsg(errMsg.toString());
         }
     }
 
@@ -1027,15 +1064,8 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         Map<Long, IamCompany> iamCompanyMap = iamCompanyService.byIdsFromHeader(headerDTOS);
         Map<Long, InvWarehouse> invWarehouseMap = invWarehouseService.getFromOrders(headerDTOS);
 
-        Map<String, Map<String, String>> lovMap = lovStatus();
-
-        Map<String, String> statusMap = lovMap.get(Constants.LOV_STATUS);
-
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             StringBuilder errMsg = new StringBuilder();
-            if(!statusMap.containsKey(headerDTO.getCountStatus())){
-                errMsg.append("Mismatch status document.");
-            }
             if(iamCompanyMap.get(headerDTO.getCompanyId()) == null) {
                 errMsg.append("Company cannot be found.");
             }

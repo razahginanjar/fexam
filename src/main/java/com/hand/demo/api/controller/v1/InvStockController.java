@@ -1,5 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
+import com.hand.demo.api.dto.InvCountHeaderDTO;
+import com.hand.demo.api.dto.InvStockDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -74,5 +76,15 @@ public class InvStockController extends BaseController {
         return Results.success();
     }
 
+    @ApiOperation(value = "列表")
+    @Permission(level = ResourceLevel.ORGANIZATION)
+    @GetMapping(path = "/summarize")
+    public ResponseEntity<List<InvStockDTO>> getSummarizes(InvCountHeaderDTO invCountHeaderDTO,
+                                                           @PathVariable Long organizationId,
+                                                           @ApiIgnore @SortDefault(value = InvStock.FIELD_STOCK_ID,
+            direction = Sort.Direction.DESC) PageRequest pageRequest) {
+        List<InvStockDTO> summarizeStock = invStockService.getSummarizeStock(invCountHeaderDTO);
+        return Results.success(summarizeStock);
+    }
 }
 

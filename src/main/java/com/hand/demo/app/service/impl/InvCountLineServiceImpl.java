@@ -4,6 +4,7 @@ import com.hand.demo.api.dto.InvCountLineDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import org.hzero.core.cache.ProcessCacheValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvCountLineService;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ public class InvCountLineServiceImpl implements InvCountLineService {
     private InvCountLineRepository invCountLineRepository;
 
     @Override
+//    @ProcessCacheValue
     public Page<InvCountLineDTO> selectList(PageRequest pageRequest, InvCountLineDTO invCountLine) {
         return PageHelper.doPageAndSort(pageRequest, () -> invCountLineRepository.selectList(invCountLine));
     }

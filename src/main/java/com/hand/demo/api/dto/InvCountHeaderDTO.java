@@ -68,9 +68,14 @@ public class InvCountHeaderDTO extends InvCountHeader implements Cacheable {
     private String superVisorNames;
     private String counterNames;
 
+    @CacheValue(key = "hiam:tenant",
+            primaryKey = "tenantId",
+            searchKey = "tenantNum",
+            structure = CacheValue.DataStructure.MAP_OBJECT)
+    private String tenantCode;
+
     //condition report
     private List<String> docStatuses;
     private String companyCode;
     private String departmentCode;
-    private String tenantCode;
 }
