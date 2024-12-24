@@ -15,6 +15,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
 import java.util.Date;
 
@@ -160,7 +161,8 @@ public class InvCountHeader extends AuditDomain {
     @NotBlank(groups = {CreateCheck.class})
     private String countStatus;
 
-    @ApiModelProperty(value = "")
+    @ApiModelProperty(value = "", example = "1977-12-12")
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", groups = {UpdateCheck.class, CreateCheck.class})
     private String countTimeStr;
 
     @ApiModelProperty(value = "")

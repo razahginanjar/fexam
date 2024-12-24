@@ -35,7 +35,6 @@
 
     <sql id="resultSum">
         fis.material_code,
-        fis.tenant_id,
         fis.material_id,
         fis.unit_code,
         sum(fis.available_quantity) as summary
@@ -158,6 +157,9 @@
             </if>
             <if test="warehouseId !=null">
                 and fis.warehouse_id = #{warehouseId,jdbcType = INTEGER}
+            </if>
+            <if test="tenantId !=null">
+                and fis.tenant_id = #{tenantId,jdbcType = INTEGER}
             </if>
             <if test="materialsId != null and materialsId.size() > 0">
                 AND fis.material_id IN

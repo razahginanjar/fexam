@@ -23,6 +23,9 @@ public class Constants {
     public static final String PROFILE_CONTENT_CODE = "FEXAM37.INV.COUNTING.ISWORKFLO";
     public static final String FLOW_KEY_CODE = "INV_COUNT37_RESULT_SUBMIT";
     public static final String DIMENSION = "USER";
+    public final static String CODE_SERVER = "FEXAM_WMS";
+    public final static String NAMESPACE = "HZERO";
+    public final static String INTERFACE_CODE = "fexam-wms-api.thirdAddCounting";
     private Constants() {}
 
 

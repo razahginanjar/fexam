@@ -40,6 +40,11 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
 
     @Override
     public List<InvCountHeaderDTO> selectList(InvCountHeaderDTO invCountHeader) {
+        UserVO userSelf = getUserSelf();
+        if(userSelf.getTenantAdminFlag() != null){
+            invCountHeader.setTenantAdminFlag(userSelf.getTenantAdminFlag());
+        }
+
         List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderMapper.selectList(invCountHeader);
         for (InvCountHeaderDTO invCountHeaderDTO : invCountHeaderDTOS) {
             String[] superSplit = invCountHeaderDTO.getSupervisorIds().split(",");
@@ -62,6 +67,14 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
         return invCountHeaderDTOS;
     }
 
+    public UserVO getUserSelf(){
+        try{
+            ResponseEntity<String> selectSelf = iamRemoteService.selectSelf();
+            return objectMapper.readValue(selectSelf.getBody(), UserVO.class);
+        } catch (JsonProcessingException e) {
+            throw new CommonException(e);
+        }
+    }
     @Override
     public InvCountHeaderDTO selectByPrimary(Long countHeaderId) {
         try{

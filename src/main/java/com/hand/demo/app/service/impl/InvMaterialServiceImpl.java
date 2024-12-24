@@ -45,7 +45,9 @@ public class InvMaterialServiceImpl implements InvMaterialService {
         StringBuilder ids = new StringBuilder();
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             String snapshotMaterialIds = headerDTO.getSnapshotMaterialIds();
-            ids.append(snapshotMaterialIds).append(",");
+            if(snapshotMaterialIds != null && !snapshotMaterialIds.isEmpty()){
+                ids.append(snapshotMaterialIds).append(",");
+            }
         }
         Set<Long> idsLong = new HashSet<>();
         String[] split = ids.toString().split(",(?=\\S|$)");

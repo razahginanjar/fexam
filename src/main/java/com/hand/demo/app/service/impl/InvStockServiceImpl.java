@@ -76,6 +76,7 @@ public class InvStockServiceImpl implements InvStockService {
         String[] split = snapshotBatchIds.split(",");
         List<Long> batchIds = Arrays.stream(split).map(Long::parseLong).collect(Collectors.toList());
         invStockDTO.setBatchIds(batchIds);
+        invStockDTO.setTenantId(invCountHeaderDTO.getTenantId());
         invStockDTO.setCompanyId(invCountHeaderDTO.getCompanyId());
         invStockDTO.setDepartmentId(invCountHeaderDTO.getDepartmentId());
         invStockDTO.setWarehouseId(invCountHeaderDTO.getWarehouseId());

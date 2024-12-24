@@ -8,15 +8,13 @@ import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
 import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.core.util.Results;
-import org.hzero.export.annotation.ExcelExport;
-import org.hzero.export.vo.ExportParam;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,8 +23,6 @@ import com.hand.demo.domain.entity.InvCountHeader;
 import com.hand.demo.domain.repository.InvCountHeaderRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -151,22 +147,28 @@ public class InvCountHeaderController extends BaseController {
             InvCountHeaderDTO invCountHeaderDTO) {
 
         List<InvCountHeaderDTO> report = invCountHeaderService.report(invCountHeaderDTO);
-        for (InvCountHeaderDTO countHeaderDTO : report) {
-            String superVisorNames = countHeaderDTO.getSupervisorList().stream()
-                    .map(UserDTO::getRealName)
-                    .collect(Collectors.joining(", "));
-            String counterNames = countHeaderDTO.getCounterList().stream()
-                    .map(UserDTO::getRealName)
-                    .collect(Collectors.joining(", "));
-            countHeaderDTO.setSuperVisorNames(superVisorNames);
-            countHeaderDTO.setCounterNames(counterNames);
-            for (InvCountLineDTO invCountLineDTO : countHeaderDTO.getCountOrderLineList()) {
-                String counterLineNames = invCountLineDTO.getCounterList().stream()
-                        .map(UserDTO::getRealName)
-                        .collect(Collectors.joining(", "));
-                invCountLineDTO.setCounterLineNames(counterLineNames);
-            }
-        }
+        report.parallelStream().forEach(
+                countHeaderDTO -> {
+                    String superVisorNames = countHeaderDTO.getSupervisorList().stream()
+                            .map(UserDTO::getRealName)
+                            .collect(Collectors.joining(", "));
+                    String counterNames = countHeaderDTO.getCounterList().stream()
+                            .map(UserDTO::getRealName)
+                            .collect(Collectors.joining(", "));
+                    countHeaderDTO.setSuperVisorNames(superVisorNames);
+                    countHeaderDTO.setCounterNames(counterNames);
+                    if(!CollectionUtils.isEmpty(countHeaderDTO.getCountOrderLineList())){
+                        countHeaderDTO.getCountOrderLineList().parallelStream().forEach(
+                               invCountLineDTO -> {
+                                   String counterLineNames = invCountLineDTO.getCounterList().stream()
+                                           .map(UserDTO::getRealName)
+                                           .collect(Collectors.joining(", "));
+                                   invCountLineDTO.setCounterLineNames(counterLineNames);
+                               }
+                        );
+                    }
+                }
+        );
         return Results.success(report);
     }
 }

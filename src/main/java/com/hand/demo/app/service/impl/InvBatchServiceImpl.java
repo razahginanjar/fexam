@@ -46,7 +46,9 @@ public class InvBatchServiceImpl implements InvBatchService {
         StringBuilder ids = new StringBuilder();
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             String snapshotBatchIds = headerDTO.getSnapshotBatchIds();
-            ids.append(snapshotBatchIds).append(",");
+            if(snapshotBatchIds != null && !snapshotBatchIds.isEmpty()){
+                ids.append(snapshotBatchIds).append(",");
+            }
         }
         Set<Long> idBatchsLong = new HashSet<>();
         String[] split = ids.toString().split(",(?=\\S|$)");
