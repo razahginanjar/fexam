@@ -9,6 +9,7 @@ import io.choerodon.core.exception.CommonException;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.apaas.common.userinfo.domain.UserVO;
 import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
+import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +40,7 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
     private ObjectMapper objectMapper;
 
     @Override
+    @ProcessCacheValue
     public List<InvCountHeaderDTO> selectList(InvCountHeaderDTO invCountHeader) {
         UserVO userSelf = getUserSelf();
         if(userSelf.getTenantAdminFlag() != null){

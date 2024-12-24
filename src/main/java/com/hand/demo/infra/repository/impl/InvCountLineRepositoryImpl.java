@@ -5,6 +5,7 @@ import com.hand.demo.api.dto.InvCountLineDTO;
 import com.hand.demo.api.dto.UserDTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
+import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.mybatis.base.impl.BaseRepositoryImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -31,6 +32,7 @@ public class InvCountLineRepositoryImpl extends BaseRepositoryImpl<InvCountLine>
     private IamRemoteService iamRemoteService;
 
     @Override
+    @ProcessCacheValue
     public List<InvCountLineDTO> selectList(InvCountLineDTO invCountLine) {
         List<InvCountLineDTO> invCountLineDTOS = invCountLineMapper.selectList(invCountLine);
         for (InvCountLineDTO invCountLineDTO : invCountLineDTOS) {

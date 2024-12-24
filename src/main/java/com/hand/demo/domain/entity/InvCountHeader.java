@@ -213,7 +213,7 @@ public class InvCountHeader extends AuditDomain {
     private Long tenantId;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class})
+    @NotNull(groups = {CreateCheck.class, UpdateCheck.class})
     private Long warehouseId;
 
     @ApiModelProperty(value = "")

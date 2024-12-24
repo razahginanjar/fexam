@@ -38,9 +38,6 @@ import java.util.stream.Collectors;
 public class InvCountHeaderController extends BaseController {
 
     @Autowired
-    private InvCountHeaderRepository invCountHeaderRepository;
-
-    @Autowired
     private InvCountHeaderService invCountHeaderService;
 
     @ApiOperation(value = "列表")
@@ -145,30 +142,7 @@ public class InvCountHeaderController extends BaseController {
     public ResponseEntity<List<InvCountHeaderDTO>> countingOrderReportDs(
             @PathVariable Long organizationId,
             InvCountHeaderDTO invCountHeaderDTO) {
-
         List<InvCountHeaderDTO> report = invCountHeaderService.report(invCountHeaderDTO);
-        report.parallelStream().forEach(
-                countHeaderDTO -> {
-                    String superVisorNames = countHeaderDTO.getSupervisorList().stream()
-                            .map(UserDTO::getRealName)
-                            .collect(Collectors.joining(", "));
-                    String counterNames = countHeaderDTO.getCounterList().stream()
-                            .map(UserDTO::getRealName)
-                            .collect(Collectors.joining(", "));
-                    countHeaderDTO.setSuperVisorNames(superVisorNames);
-                    countHeaderDTO.setCounterNames(counterNames);
-                    if(!CollectionUtils.isEmpty(countHeaderDTO.getCountOrderLineList())){
-                        countHeaderDTO.getCountOrderLineList().parallelStream().forEach(
-                               invCountLineDTO -> {
-                                   String counterLineNames = invCountLineDTO.getCounterList().stream()
-                                           .map(UserDTO::getRealName)
-                                           .collect(Collectors.joining(", "));
-                                   invCountLineDTO.setCounterLineNames(counterLineNames);
-                               }
-                        );
-                    }
-                }
-        );
         return Results.success(report);
     }
 }
