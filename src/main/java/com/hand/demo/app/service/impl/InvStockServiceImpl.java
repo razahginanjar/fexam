@@ -62,24 +62,33 @@ public class InvStockServiceImpl implements InvStockService {
 
     @Override
     public List<InvStockDTO> getSummarizeStock(InvCountHeaderDTO invCountHeaderDTO) {
+        // Create a new InvStockDTO instance to hold the summarized stock details
         InvStockDTO invStockDTO = new InvStockDTO();
-        if(invCountHeaderDTO.getCountDimension().equals("LOT")){
-            invStockDTO.setLot(true);
-        }else {
-            invStockDTO.setLot(false);
-        }
+
+        // Check if the count dimension is "LOT" and set the lot flag accordingly
+        invStockDTO.setLot("LOT".equals(invCountHeaderDTO.getCountDimension()));
+
+        // Convert the snapshotMaterialIds from CSV to a List<Long>
         String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
-        String[] split1 = snapshotMaterialIds.split(",");
-        List<Long> materialIds = Arrays.stream(split1).map(Long::parseLong).collect(Collectors.toList());
+        List<Long> materialIds = Arrays.stream(snapshotMaterialIds.split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
         invStockDTO.setMaterialsId(materialIds);
+
+        // Convert the snapshotBatchIds from CSV to a List<Long>
         String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
-        String[] split = snapshotBatchIds.split(",");
-        List<Long> batchIds = Arrays.stream(split).map(Long::parseLong).collect(Collectors.toList());
+        List<Long> batchIds = Arrays.stream(snapshotBatchIds.split(","))
+                .map(Long::parseLong)
+                .collect(Collectors.toList());
         invStockDTO.setBatchIds(batchIds);
+
+        // Set other relevant properties of invStockDTO from invCountHeaderDTO
         invStockDTO.setTenantId(invCountHeaderDTO.getTenantId());
         invStockDTO.setCompanyId(invCountHeaderDTO.getCompanyId());
         invStockDTO.setDepartmentId(invCountHeaderDTO.getDepartmentId());
         invStockDTO.setWarehouseId(invCountHeaderDTO.getWarehouseId());
+
+        // Fetch the summarized stock data from the repository and return it
         return invStockRepository.getSummarizeStock(invStockDTO);
     }
 }

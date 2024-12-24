@@ -39,7 +39,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -53,24 +52,18 @@ import java.util.stream.Collectors;
 public class InvCountHeaderServiceImpl extends BaseAppService implements InvCountHeaderService {
     @Autowired
     private InvCountHeaderRepository invCountHeaderRepository;
-
     @Autowired
     private CodeRuleBuilder codeRuleBuilder;
-
     @Autowired
     private Utils utils;
     @Autowired
     private ObjectMapper objectMapper;
-
     @Autowired
     private ProfileClient profileClient;
-
     @Autowired
     private IamCompanyRepository iamCompanyRepository;
-
     @Autowired
     private IamRemoteService iamRemoteService;
-
     @Autowired
     private InvWarehouseRepository invWarehouseRepository;
     @Autowired
@@ -89,7 +82,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     private InvCountExtraRepository invCountExtraRepository;
     @Autowired
     private InvStockService invStockService;
-
     @Autowired
     private InvCountExtraService invCountExtraService;
     @Autowired
@@ -976,7 +968,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
 
     /**
      * Saves inventory count orders after performing manual checks and validations.
-     *
+     *<p></p>
      * This method is transactional, ensuring that all operations are rolled back in case of an exception.
      *
      * @param headerDTOS List of inventory count header DTOs to save.
@@ -1005,7 +997,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     /**
      * Executes the order processing for inventory count headers.
      * This method saves, validates, executes, and synchronizes the orders with WMS if all checks pass.
-     *
+     *<p></p>
      * The operation is transactional to ensure atomicity, rolling back on any exceptions.
      *
      * @param headerDTOS List of inventory count header DTOs to process.
@@ -1079,40 +1071,64 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     }
 
 
-    private List<SnapShotMaterialDTO> getMaterials(String materialIds, Map<Long, InvMaterial> invMaterialMap){
-        Set<Long> idsMats = new HashSet<>();
-        String[] split = materialIds.split(",");
-        for (String s : split) {
-            idsMats.add(Long.valueOf(s));
-        }
+    private List<SnapShotMaterialDTO> getMaterials(String materialIds, Map<Long, InvMaterial> invMaterialMap) {
+        // Convert the materialIds string into a Set<Long> to ensure uniqueness and avoid duplicates
+        Set<Long> idsMats = Arrays.stream(materialIds.split(","))
+                .map(Long::valueOf) // Convert each material ID string to Long
+                .collect(Collectors.toSet()); // Collect into a Set to ensure uniqueness
+
+        // Prepare the result list to hold SnapShotMaterialDTOs
         List<SnapShotMaterialDTO> result = new ArrayList<>();
-        for (Long idsMat : idsMats) {
-            InvMaterial invMaterial = invMaterialMap.get(idsMat);
-            SnapShotMaterialDTO snapShotMaterialDTO = new SnapShotMaterialDTO();
-            snapShotMaterialDTO.setId(idsMat);
-            snapShotMaterialDTO.setCode(invMaterial.getMaterialCode());
-            result.add(snapShotMaterialDTO);
+
+        // Iterate over the unique material IDs
+        for (Long id : idsMats) {
+            // Retrieve the InvMaterial from the map based on the current material ID
+            InvMaterial invMaterial = invMaterialMap.get(id);
+
+            // If the InvMaterial is found, create a SnapShotMaterialDTO and populate its fields
+            if (invMaterial != null) {
+                SnapShotMaterialDTO snapShotMaterialDTO = new SnapShotMaterialDTO();
+                snapShotMaterialDTO.setId(id); // Set the material ID
+                snapShotMaterialDTO.setCode(invMaterial.getMaterialCode()); // Set the material code from InvMaterial
+
+                // Add the populated SnapShotMaterialDTO to the result list
+                result.add(snapShotMaterialDTO);
+            }
         }
+
+        // Return the list of SnapShotMaterialDTOs
         return result;
     }
 
-    private List<SnapShotBatchDTO> getBatches(String batchids, Map<Long, InvBatch> invBatchMap){
-        Set<Long> idsBatch = new HashSet<>();
-        String[] split = batchids.split(",");
-        for (String s : split) {
-            idsBatch.add(Long.valueOf(s));
-        }
+
+    private List<SnapShotBatchDTO> getBatches(String batchIds, Map<Long, InvBatch> invBatchMap) {
+        // Split the batchIds string into individual batch ID strings and convert them into a Set<Long> to ensure uniqueness
+        Set<Long> idsBatch = Arrays.stream(batchIds.split(","))
+                .map(Long::valueOf) // Convert each batch ID string to Long
+                .collect(Collectors.toSet()); // Collect into a Set to avoid duplicates
+
+        // Prepare the result list to hold SnapShotBatchDTOs
         List<SnapShotBatchDTO> result = new ArrayList<>();
-        for (Long idsMat : idsBatch) {
-            InvBatch invBatch = invBatchMap.get(idsMat);
-            SnapShotBatchDTO snapShotBatchDTO = new SnapShotBatchDTO();
-            snapShotBatchDTO.setId(idsMat);
-            snapShotBatchDTO.setCode(invBatch.getBatchCode());
-            result.add(snapShotBatchDTO);
+
+        // Iterate over the unique batch IDs
+        for (Long id : idsBatch) {
+            // Retrieve the InvBatch from the map based on the current batch ID
+            InvBatch invBatch = invBatchMap.get(id);
+
+            // If the InvBatch is found, create a SnapShotBatchDTO and populate its fields
+            if (invBatch != null) {
+                SnapShotBatchDTO snapShotBatchDTO = new SnapShotBatchDTO();
+                snapShotBatchDTO.setId(id); // Set the batch ID
+                snapShotBatchDTO.setCode(invBatch.getBatchCode()); // Set the batch code from InvBatch
+
+                // Add the populated SnapShotBatchDTO to the result list
+                result.add(snapShotBatchDTO);
+            }
         }
+
+        // Return the list of SnapShotBatchDTOs
         return result;
     }
-
     //trying using @Async for threading
     @Async
     public CompletableFuture<IamCompany> getIamCompanyAsync(String companyCode) {
@@ -1158,139 +1174,157 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     @ProcessCacheValue
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public List<InvCountHeaderDTO> report(InvCountHeaderDTO invCountHeaderDTO) {
-            List<CompletableFuture<?>> futures = new ArrayList<>();
+        // List to hold CompletableFutures for asynchronous operations
+        List<CompletableFuture<?>> futures = new ArrayList<>();
 
-            // Fetching data asynchronously
-            CompletableFuture<IamCompany> companyFuture = null;
-            if (invCountHeaderDTO.getWareHouseCode() != null) {
-                companyFuture = getIamCompanyAsync(invCountHeaderDTO.getCompanyCode());
-                futures.add(companyFuture);
+        // Fetching data asynchronously
+        CompletableFuture<IamCompany> companyFuture = null;
+        if (invCountHeaderDTO.getWareHouseCode() != null) {
+            // Asynchronously fetch company details if warehouse code is provided
+            companyFuture = getIamCompanyAsync(invCountHeaderDTO.getCompanyCode());
+            futures.add(companyFuture); // Add to the list of futures
+        }
+
+        CompletableFuture<IamDepartment> departmentFuture = null;
+        if (invCountHeaderDTO.getWareHouseCode() != null) {
+            // Asynchronously fetch department details if warehouse code is provided
+            departmentFuture = getIamDepartmentAsync(invCountHeaderDTO.getDepartmentCode());
+            futures.add(departmentFuture); // Add to the list of futures
+        }
+
+        // Note: You probably don't need to add departmentFuture twice, so removing this duplicate.
+        CompletableFuture<InvWarehouse> warehouseFuture = null;
+        if (invCountHeaderDTO.getWareHouseCode() != null) {
+            // Asynchronously fetch warehouse details if warehouse code is provided
+            warehouseFuture = getInvWarehouseAsync(invCountHeaderDTO.getWareHouseCode());
+            futures.add(warehouseFuture); // Add to the list of futures
+        }
+
+        // Filter out null values from futures list before passing to allOf
+        futures.removeIf(Objects::isNull);  // Remove null values to avoid issues
+
+        // Wait for all futures to complete (fetching company, department, and warehouse details)
+        if (!futures.isEmpty()) {
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+        }
+
+        // Set values after all async tasks are completed, checking for errors and null results
+        if (companyFuture != null && companyFuture.isDone() && !companyFuture.isCompletedExceptionally()) {
+            IamCompany company = companyFuture.join();  // Using join() to avoid try-catch
+            if (company != null) {
+                invCountHeaderDTO.setCompanyId(company.getCompanyId());
             }
-            CompletableFuture<IamDepartment> departmentFuture = null;
-            if (invCountHeaderDTO.getWareHouseCode() != null) {
-                departmentFuture = getIamDepartmentAsync(invCountHeaderDTO.getDepartmentCode());
-                futures.add(departmentFuture);
+        }
+
+        if (departmentFuture != null && departmentFuture.isDone() && !departmentFuture.isCompletedExceptionally()) {
+            IamDepartment department = departmentFuture.join();  // Using join() to avoid try-catch
+            if (department != null) {
+                invCountHeaderDTO.setDepartmentId(department.getDepartmentId());
             }
-            futures.add(departmentFuture);
-            CompletableFuture<InvWarehouse> warehouseFuture = null;
-            if (invCountHeaderDTO.getWareHouseCode() != null) {
-                warehouseFuture = getInvWarehouseAsync(invCountHeaderDTO.getWareHouseCode());
-                futures.add(warehouseFuture);
+        }
+
+        if (warehouseFuture != null && warehouseFuture.isDone() && !warehouseFuture.isCompletedExceptionally()) {
+            InvWarehouse warehouse = warehouseFuture.join();  // Using join() to avoid try-catch
+            if (warehouse != null) {
+                invCountHeaderDTO.setWarehouseId(warehouse.getWarehouseId());
+            }
+        }
+
+        // Fetch invCountHeaderDTOs from the repository
+        List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderRepository.selectList(invCountHeaderDTO);
+        if (CollectionUtils.isEmpty(invCountHeaderDTOS)) {
+            return invCountHeaderDTOS; // Return early if no data is found
+        }
+
+        // Fetch maps asynchronously for department, warehouse, batch, material, and count lines
+        CompletableFuture<Map<Long, IamDepartment>> iamDepartmentFuture = getIamDepartmentMapAsync(invCountHeaderDTOS);
+        CompletableFuture<Map<Long, InvWarehouse>> warehouseFutureMap = getWarehouseMapAsync(invCountHeaderDTOS);
+        CompletableFuture<Map<Long, InvBatch>> invBatchFuture = getInvBatchMapAsync(invCountHeaderDTOS);
+        CompletableFuture<Map<Long, InvMaterial>> invMaterialFuture = getInvMaterialMapAsync(invCountHeaderDTOS);
+        CompletableFuture<Map<Long, Map<Long, InvCountLineDTO>>> lineMapFuture = getLineMapAsync(invCountHeaderDTOS);
+
+        // Add all these futures to the list
+        futures.add(iamDepartmentFuture);
+        futures.add(warehouseFutureMap);
+        futures.add(invBatchFuture);
+        futures.add(invMaterialFuture);
+        futures.add(lineMapFuture);
+
+        // Wait for all these futures to complete
+        CompletableFuture.allOf(iamDepartmentFuture, warehouseFutureMap, invBatchFuture, invMaterialFuture, lineMapFuture).join();
+
+        // Retrieve the results from the futures
+        Map<Long, IamDepartment> iamDepartmentMap = iamDepartmentFuture.join();
+        Map<Long, InvWarehouse> warehouseMap = warehouseFutureMap.join();
+        Map<Long, InvBatch> invBatchMap = invBatchFuture.join();
+        Map<Long, InvMaterial> invMaterialMap = invMaterialFuture.join();
+        Map<Long, Map<Long, InvCountLineDTO>> lineMap = lineMapFuture.join();
+
+        // Prepare a list of statuses for processing
+        List<String> statueses = new ArrayList<>();
+        statueses.add("PROCESSING");
+        statueses.add("REJECTED");
+        statueses.add("APPROVED");
+        statueses.add("WITHDRAWN");
+
+        // Process each invCountHeaderDTO in parallel (for better performance)
+        invCountHeaderDTOS.parallelStream().forEach(invCountHeaderDTO1 -> {
+            // Check if snapshotBatchIds exist, and process them
+            if (invCountHeaderDTO1.getSnapshotBatchIds() != null && !invCountHeaderDTO1.getSnapshotBatchIds().isEmpty()) {
+                List<SnapShotBatchDTO> batches = getBatches(invCountHeaderDTO1.getSnapshotBatchIds(), invBatchMap);
+                invCountHeaderDTO1.setSnapshotBatchList(batches);
+
+                // Join batch codes into a string
+                String bCodes = batches.stream()
+                        .map(SnapShotBatchDTO::getCode)
+                        .collect(Collectors.joining(", "));
+                invCountHeaderDTO1.setBatchCodes(bCodes);
             }
 
-            // Filter out null values from futures list before passing to allOf
+            // Check if snapshotMaterialIds exist, and process them
+            if (invCountHeaderDTO1.getSnapshotMaterialIds() != null && !invCountHeaderDTO1.getSnapshotMaterialIds().isEmpty()) {
+                List<SnapShotMaterialDTO> materials = getMaterials(invCountHeaderDTO1.getSnapshotMaterialIds(), invMaterialMap);
+                invCountHeaderDTO1.setSnapshotMaterialList(materials);
 
-            futures.removeIf(Objects::isNull);  // Remove null values
-            // Wait for all futures to complete
-            // Only pass non-null futures to CompletableFuture.allOf
-            if (!futures.isEmpty()) {
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                // Join material codes into a string
+                String mCodes = materials.stream()
+                        .map(SnapShotMaterialDTO::getCode)
+                        .collect(Collectors.joining(", "));
+                invCountHeaderDTO1.setMaterialCodes(mCodes);
             }
 
-            // Set values after all async tasks are completed
-            if (companyFuture != null && companyFuture.isDone() && !companyFuture.isCompletedExceptionally()) {
-                IamCompany company = companyFuture.join();  // Using join() to avoid try-catch
-                if (company != null) {
-                    invCountHeaderDTO.setCompanyId(company.getCompanyId());
-                }
+            // Set department name using department ID
+            String departmentName = iamDepartmentMap.get(invCountHeaderDTO1.getDepartmentId()).getDepartmentName();
+            invCountHeaderDTO1.setDepartmentName(departmentName);
+
+            // Set warehouse code using warehouse ID
+            invCountHeaderDTO1.setWareHouseCode(warehouseMap.get(invCountHeaderDTO1.getWarehouseId()).getWarehouseCode());
+
+            // If the count status is in the list of statuses, fetch approval history
+            if (statueses.contains(invCountHeaderDTO1.getCountStatus())) {
+                List<RunTaskHistory> history = workflowService.getHistory(invCountHeaderDTO1.getTenantId(), Constants.FLOW_KEY_CODE, invCountHeaderDTO1.getCountNumber());
+                invCountHeaderDTO1.setHistoryApproval(history);
             }
 
-            if (departmentFuture != null && departmentFuture.isDone() && !departmentFuture.isCompletedExceptionally()) {
-                IamDepartment department = departmentFuture.join();  // Using join() to avoid try-catch
-                if (department != null) {
-                    invCountHeaderDTO.setDepartmentId(department.getDepartmentId());
-                }
-            }
+            // Set count line details if available
+            if (lineMap.get(invCountHeaderDTO1.getCountHeaderId()) != null && !lineMap.get(invCountHeaderDTO1.getCountHeaderId()).isEmpty()) {
+                List<InvCountLineDTO> collect = new ArrayList<>(lineMap.get(invCountHeaderDTO1.getCountHeaderId()).values());
+                invCountHeaderDTO1.setCountOrderLineList(collect);
 
-            if (warehouseFuture != null && warehouseFuture.isDone() && !warehouseFuture.isCompletedExceptionally()) {
-                InvWarehouse warehouse = warehouseFuture.join();  // Using join() to avoid try-catch
-                if (warehouse != null) {
-                    invCountHeaderDTO.setWarehouseId(warehouse.getWarehouseId());
-                }
-            }
-
-
-            List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderRepository.selectList(invCountHeaderDTO);
-            if(CollectionUtils.isEmpty(invCountHeaderDTOS)){
-                return invCountHeaderDTOS;
-            }
-            // Fetch the maps asynchronously
-            CompletableFuture<Map<Long, IamDepartment>> iamDepartmentFuture = getIamDepartmentMapAsync(invCountHeaderDTOS);
-            CompletableFuture<Map<Long, InvWarehouse>> warehouseFutureMap = getWarehouseMapAsync(invCountHeaderDTOS);
-            CompletableFuture<Map<Long, InvBatch>> invBatchFuture = getInvBatchMapAsync(invCountHeaderDTOS);
-            CompletableFuture<Map<Long, InvMaterial>> invMaterialFuture = getInvMaterialMapAsync(invCountHeaderDTOS);
-            CompletableFuture<Map<Long, Map<Long, InvCountLineDTO>>> lineMapFuture = getLineMapAsync(invCountHeaderDTOS);
-
-            // Add futures to the list
-            futures.add(iamDepartmentFuture);
-            futures.add(warehouseFutureMap);
-            futures.add(invBatchFuture);
-            futures.add(invMaterialFuture);
-            futures.add(lineMapFuture);
-
-            // Wait for all futures to complete
-            CompletableFuture.allOf(iamDepartmentFuture, warehouseFutureMap, invBatchFuture, invMaterialFuture, lineMapFuture).join();
-
-            // Retrieve the results from the futures
-            Map<Long, IamDepartment> iamDepartmentMap = iamDepartmentFuture.join();
-            Map<Long, InvWarehouse> warehouseMap = warehouseFutureMap.join();
-            Map<Long, InvBatch> invBatchMap = invBatchFuture.join();
-            Map<Long, InvMaterial> invMaterialMap = invMaterialFuture.join();
-            Map<Long, Map<Long, InvCountLineDTO>> lineMap = lineMapFuture.join();
-            List<String> statueses = new ArrayList<>();
-            statueses.add("PROCESSING");
-            statueses.add("REJECTED");
-            statueses.add("APPROVED");
-            statueses.add("WITHDRAWN");
-
-            invCountHeaderDTOS.parallelStream().forEach(
-                    invCountHeaderDTO1 -> {
-                        if(invCountHeaderDTO1.getSnapshotBatchIds() != null && !invCountHeaderDTO1.getSnapshotBatchIds().isEmpty()){
-                            List<SnapShotBatchDTO> batches = getBatches(invCountHeaderDTO1.getSnapshotBatchIds(), invBatchMap);
-                            invCountHeaderDTO1.setSnapshotBatchList(batches);
-                            String bCodes = batches.stream()
-                                    .map(SnapShotBatchDTO::getCode)
-                                    .collect(Collectors.joining(", "));
-                            invCountHeaderDTO1.setBatchCodes(bCodes);
-                        }
-                        if(invCountHeaderDTO1.getSnapshotMaterialIds() != null && !invCountHeaderDTO1.getSnapshotMaterialIds().isEmpty()){
-                            List<SnapShotMaterialDTO> materials = getMaterials(invCountHeaderDTO1.getSnapshotMaterialIds(), invMaterialMap);
-                            invCountHeaderDTO1.setSnapshotMaterialList(materials);
-                            String mCodes = materials.stream()
-                                    .map(SnapShotMaterialDTO::getCode)
-                                    .collect(Collectors.joining(", "));
-                            invCountHeaderDTO1.setMaterialCodes(mCodes);
-                        }
-
-                        String departmentName = iamDepartmentMap.get(invCountHeaderDTO1.getDepartmentId()).getDepartmentName();
-
-                        invCountHeaderDTO1.setDepartmentName(departmentName);
-
-                        invCountHeaderDTO1.setWareHouseCode(warehouseMap.get(invCountHeaderDTO1.getWarehouseId()).getWarehouseCode());
-                        if(statueses.contains(invCountHeaderDTO1.getCountStatus())){
-                            List<RunTaskHistory> history = workflowService.getHistory(invCountHeaderDTO1.getTenantId(), Constants.FLOW_KEY_CODE, invCountHeaderDTO1.getCountNumber());
-                            invCountHeaderDTO1.setHistoryApproval(history);
-                        }
-
-                        if(lineMap.get(invCountHeaderDTO1.getCountHeaderId()) != null && !lineMap.get(invCountHeaderDTO1.getCountHeaderId()).isEmpty()){
-                            List<InvCountLineDTO> collect = new ArrayList<>(lineMap.get(invCountHeaderDTO1.getCountHeaderId()).values());
-                            invCountHeaderDTO1.setCountOrderLineList(collect);
-                            List<InvCountLineDTO> countOrderLineList = invCountHeaderDTO1.getCountOrderLineList();
-
-                            countOrderLineList.parallelStream().forEach(
-                                    invCountLineDTO -> {
-                                        invCountLineDTO.setItemName(invMaterialMap.get(invCountLineDTO.getMaterialId()).getMaterialName());
-                                        invCountLineDTO.setItemCode(invMaterialMap.get(invCountLineDTO.getMaterialId()).getMaterialCode());
-                                        if(invCountLineDTO.getBatchId() != null){
-                                            invCountLineDTO.setBatchCode(invBatchMap.get(invCountLineDTO.getBatchId()).getBatchCode());
-                                        }
-                                    }
-                            );
-                        }
-
+                // Process each line in parallel
+                List<InvCountLineDTO> countOrderLineList = invCountHeaderDTO1.getCountOrderLineList();
+                countOrderLineList.parallelStream().forEach(invCountLineDTO -> {
+                    invCountLineDTO.setItemName(invMaterialMap.get(invCountLineDTO.getMaterialId()).getMaterialName());
+                    invCountLineDTO.setItemCode(invMaterialMap.get(invCountLineDTO.getMaterialId()).getMaterialCode());
+                    if (invCountLineDTO.getBatchId() != null) {
+                        invCountLineDTO.setBatchCode(invBatchMap.get(invCountLineDTO.getBatchId()).getBatchCode());
                     }
-            );
-            return invCountHeaderDTOS;
+                });
+            }
+        });
+
+        // Return the populated list of InvCountHeaderDTOs
+        return invCountHeaderDTOS;
     }
 
     /**

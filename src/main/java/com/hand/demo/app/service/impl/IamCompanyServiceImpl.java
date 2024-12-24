@@ -39,16 +39,25 @@ public class IamCompanyServiceImpl implements IamCompanyService {
 
     @Override
     public Map<Long, IamCompany> byIdsFromHeader(List<InvCountHeaderDTO> headerDTOS) {
+        // Collect unique company IDs from the headerDTOS list.
+        // We convert each companyId to a string and collect them in a set to ensure uniqueness.
         Set<String> companyIds = headerDTOS.stream()
-                .map(header -> header.getCompanyId().toString())
-                .collect(Collectors.toSet());
+                .map(header -> header.getCompanyId().toString())  // Convert each companyId to string
+                .collect(Collectors.toSet());  // Collect unique company IDs into a set
+
+        //Join the set of companyIds into a comma-separated string for querying.
         String join = String.join(",", companyIds);
+
+        // Fetch the list of IamCompany entities by the joined company IDs.
+        // Assumes that the repository method `selectByIds` handles the SQL query based on the provided IDs.
         List<IamCompany> iamCompanies = iamCompanyRepository.selectByIds(join);
-        Map<Long, IamCompany> iamCompanyMap = new HashMap<>();
-        for (IamCompany iamCompany : iamCompanies) {
-            iamCompanyMap.put(iamCompany.getCompanyId(), iamCompany);
-        }
-        return iamCompanyMap;
+
+        // Create a map to store the IamCompany objects by their companyId.
+        // This will allow for quick lookup by companyId.
+
+        // Return the map of companyId to IamCompany.
+        return iamCompanies.stream()
+                .collect(Collectors.toMap(IamCompany::getCompanyId, company -> company));
     }
 }
 

@@ -1,7 +1,6 @@
 package com.hand.demo.app.service.impl;
 
 import com.hand.demo.api.dto.InvCountHeaderDTO;
-import com.hand.demo.domain.entity.InvMaterial;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
@@ -43,31 +42,49 @@ public class InvBatchServiceImpl implements InvBatchService {
     @Override
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public Map<Long, InvBatch> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
+        // Build a string of snapshotBatchIds from the headerDTOS list
         StringBuilder ids = new StringBuilder();
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
+            // Check if snapshotBatchIds is not null or empty before appending it
             String snapshotBatchIds = headerDTO.getSnapshotBatchIds();
-            if(snapshotBatchIds != null && !snapshotBatchIds.isEmpty()){
+            if (snapshotBatchIds != null && !snapshotBatchIds.isEmpty()) {
                 ids.append(snapshotBatchIds).append(",");
             }
         }
+
+        // If no batch IDs were found, return an empty map to avoid unnecessary database query
+        if (ids.length() == 0) {
+            return new HashMap<>();  // Return an empty map if no batch IDs are provided
+        }
+
+        // Convert the comma-separated string of IDs into a set of unique Long values
         Set<Long> idBatchsLong = new HashSet<>();
-        String[] split = ids.toString().split(",(?=\\S|$)");
+        String[] split = ids.toString().split(",(?=\\S|$)");  // Split by commas ensuring no empty results
         for (String s : split) {
+            // Add each batch ID to the set after converting to Long
             idBatchsLong.add(Long.valueOf(s));
         }
+
+        // Prepare the batch IDs for querying by concatenating them into a string
         StringBuilder result = new StringBuilder();
         for (Long l : idBatchsLong) {
             result.append(l).append(",");
         }
-        // Remove the trailing comma if it exists
+
+        // Remove the trailing comma if it exists, to ensure the correct format for the query
         if (result.length() > 0) {
-            result.deleteCharAt(result.length() - 1);
+            result.deleteCharAt(result.length() - 1);  // Remove the last comma
         }
+
+        // Query the database to fetch the InvBatch entities by the concatenated batch IDs
         List<InvBatch> invBatches = invBatchRepository.selectByIds(result.toString());
+
+        // Map the fetched InvBatch entities by their batchId for quick lookup
         Map<Long, InvBatch> invBatchMap = new HashMap<>();
-        for (InvBatch invBatch : invBatches) {
-            invBatchMap.put(invBatch.getBatchId(), invBatch);
-        }
+        invBatches.forEach(
+                invBatch -> invBatchMap.put(invBatch.getBatchId(), invBatch)
+        );
+        // Return the map of batchId to InvBatch
         return invBatchMap;
     }
 }

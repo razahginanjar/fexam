@@ -42,31 +42,49 @@ public class InvMaterialServiceImpl implements InvMaterialService {
     @Override
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public Map<Long, InvMaterial> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
+        // StringBuilder to collect all material IDs from the snapshotMaterialIds field of the headers
         StringBuilder ids = new StringBuilder();
+
+        // Iterate through all headerDTOS to collect the snapshot material IDs
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             String snapshotMaterialIds = headerDTO.getSnapshotMaterialIds();
-            if(snapshotMaterialIds != null && !snapshotMaterialIds.isEmpty()){
+
+            // Only add to the ids if snapshotMaterialIds is not null or empty
+            if (snapshotMaterialIds != null && !snapshotMaterialIds.isEmpty()) {
                 ids.append(snapshotMaterialIds).append(",");
             }
         }
+
+        // If no IDs were collected, return an empty map early (optimization)
+        if (ids.length() == 0) {
+            return new HashMap<>();
+        }
+
+        // Split the collected IDs into individual strings and convert them into a set of longs (to remove duplicates)
         Set<Long> idsLong = new HashSet<>();
         String[] split = ids.toString().split(",(?=\\S|$)");
         for (String s : split) {
-            idsLong.add(Long.valueOf(s));
+            idsLong.add(Long.valueOf(s));  // Convert to Long and add to the set
         }
-        StringBuilder result = new StringBuilder();
-        for (Long l : idsLong) {
-            result.append(l).append(",");
+
+        // If no IDs were found after processing, return an empty map (early exit optimization)
+        if (idsLong.isEmpty()) {
+            return new HashMap<>();
         }
-        // Remove the trailing comma if it exists
-        if (result.length() > 0) {
-            result.deleteCharAt(result.length() - 1);
-        }
-        List<InvMaterial> invMaterials = invMaterialRepository.selectByIds(result.toString());
+
+        // Convert the set of IDs to a comma-separated string (for SQL query)
+        String result = String.join(",", idsLong.stream().map(String::valueOf).collect(Collectors.toSet()));
+
+        // Query the database to fetch InvMaterial entities using the comma-separated string of IDs
+        List<InvMaterial> invMaterials = invMaterialRepository.selectByIds(result);
+
+        // Create a map to store the materials with their ID as the key
         Map<Long, InvMaterial> invMaterialMap = new HashMap<>();
         for (InvMaterial invMaterial : invMaterials) {
             invMaterialMap.put(invMaterial.getMaterialId(), invMaterial);
         }
+
+        // Return the map of InvMaterial entities
         return invMaterialMap;
     }
 }

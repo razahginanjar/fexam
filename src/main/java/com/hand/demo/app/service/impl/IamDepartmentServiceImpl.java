@@ -43,18 +43,25 @@ public class IamDepartmentServiceImpl implements IamDepartmentService {
     @Override
     @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
     public Map<Long, IamDepartment> getFromHeaders(List<InvCountHeaderDTO> headerDTOS) {
-        Set<String> departementIds = headerDTOS.stream()
-                .map(header ->
-                    header.getDepartmentId().toString()
-                )
-                .collect(Collectors.toSet());
-        String departement = String.join(",", departementIds);
-        List<IamDepartment> invWarehouses = iamDepartmentRepository.selectByIds(departement);
-        Map<Long, IamDepartment> invWarehouseMap = new HashMap<>();
-        for (IamDepartment iamDepartment : invWarehouses) {
-            invWarehouseMap.put(iamDepartment.getDepartmentId(), iamDepartment);
-        }
-        return invWarehouseMap;
+        // Collect unique department IDs from the headerDTOS list.
+        // Convert each departmentId to a string and collect them in a set to ensure uniqueness.
+        Set<String> departmentIds = headerDTOS.stream()
+                .map(header -> header.getDepartmentId().toString())  // Convert each departmentId to string
+                .collect(Collectors.toSet());  // Collect unique department IDs into a set
+
+        // Join the set of departmentIds into a comma-separated string for querying.
+        String departmentIdString = String.join(",", departmentIds);
+
+        // Fetch the list of IamDepartment entities by the joined department IDs.
+        // Assumes that the repository method `selectByIds` handles the SQL query based on the provided IDs.
+        List<IamDepartment> iamDepartments = iamDepartmentRepository.selectByIds(departmentIdString);
+
+        // Create a map to store the IamDepartment objects by their departmentId.
+        // This allows for quick lookup by departmentId.
+
+        // Return the map of departmentId to IamDepartment.
+        return iamDepartments.stream()
+                .collect(Collectors.toMap(IamDepartment::getDepartmentId, department -> department));
     }
 }
 
