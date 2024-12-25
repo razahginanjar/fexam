@@ -17,7 +17,7 @@ import java.util.List;
  * @author razah
  * @since 2024-12-17 09:56:34
  */
-public interface InvCountHeaderService extends AopProxy<InvCountHeaderService> {
+public interface InvCountHeaderService {
 
     /**
      * 查询数据

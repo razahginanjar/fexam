@@ -3,28 +3,24 @@ package com.hand.demo.api.controller.v1;
 import com.hand.demo.api.dto.*;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
+import io.choerodon.mybatis.domain.AuditDomain;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
 import io.choerodon.mybatis.pagehelper.domain.Sort;
 import io.choerodon.swagger.annotation.Permission;
 import io.swagger.annotations.ApiOperation;
-import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.platform.lov.annotation.ProcessLovValue;
 import org.hzero.core.base.BaseConstants;
 import org.hzero.core.base.BaseController;
 import org.hzero.core.cache.ProcessCacheValue;
 import org.hzero.core.util.Results;
 import org.hzero.mybatis.helper.SecurityTokenHelper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.hand.demo.app.service.InvCountHeaderService;
-import com.hand.demo.domain.entity.InvCountHeader;
-import com.hand.demo.domain.repository.InvCountHeaderRepository;
 import springfox.documentation.annotations.ApiIgnore;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * (InvCountHeader)表控制层
@@ -37,8 +33,11 @@ import java.util.stream.Collectors;
 @RequestMapping("/v1/{organizationId}/inv-count-headers")
 public class InvCountHeaderController extends BaseController {
 
-    @Autowired
-    private InvCountHeaderService invCountHeaderService;
+    private final InvCountHeaderService invCountHeaderService;
+
+    public InvCountHeaderController(InvCountHeaderService invCountHeaderService) {
+        this.invCountHeaderService = invCountHeaderService;
+    }
 
     @ApiOperation(value = "列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
@@ -47,7 +46,7 @@ public class InvCountHeaderController extends BaseController {
     @GetMapping
     public ResponseEntity<Page<InvCountHeaderDTO>> list(InvCountHeaderDTO invCountHeader,
                                                         @PathVariable Long organizationId,
-                                                        @ApiIgnore @SortDefault(value = InvCountHeader.FIELD_CREATION_DATE,
+                                                        @ApiIgnore @SortDefault(value = AuditDomain.FIELD_CREATION_DATE,
             direction = Sort.Direction.DESC) PageRequest pageRequest) {
         Page<InvCountHeaderDTO> list = invCountHeaderService.selectList(pageRequest, invCountHeader);
         return Results.success(list);
@@ -115,7 +114,7 @@ public class InvCountHeaderController extends BaseController {
     @ApiOperation(value = "callback submit")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @PostMapping(path = "/callback")
-    public ResponseEntity<?> callback(@PathVariable Long organizationId,
+    public ResponseEntity<String> callback(@PathVariable Long organizationId,
                                                       @RequestBody WorkFlowEventDTO workFlowEventDTO) {
         invCountHeaderService.callbackHeader(workFlowEventDTO);
         return Results.success("data status is change " + workFlowEventDTO.getDocStatus());
@@ -126,7 +125,7 @@ public class InvCountHeaderController extends BaseController {
     @ApiOperation(value = "orderRemove")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @DeleteMapping
-    public ResponseEntity<?> checkAndRemove(@RequestBody List<InvCountHeaderDTO> invCountHeaders,
+    public ResponseEntity<InvCountInfoDTO> checkAndRemove(@RequestBody List<InvCountHeaderDTO> invCountHeaders,
                                             @PathVariable String organizationId) {
         SecurityTokenHelper.validToken(invCountHeaders);
         InvCountInfoDTO invCountInfoDTO = invCountHeaderService.checkAndRemove(invCountHeaders);
