@@ -8,6 +8,7 @@ import com.hand.demo.app.service.*;
 import com.hand.demo.domain.entity.*;
 import com.hand.demo.domain.repository.*;
 import com.hand.demo.infra.constant.Constants;
+import com.hand.demo.infra.constant.CountStatus;
 import com.hand.demo.infra.util.Utils;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.exception.CommonException;
@@ -15,6 +16,7 @@ import io.choerodon.core.oauth.CustomUserDetails;
 import io.choerodon.core.oauth.DetailsHelper;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import jodd.util.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.apaas.common.userinfo.domain.UserVO;
@@ -23,7 +25,9 @@ import org.hzero.boot.interfaces.sdk.dto.ResponsePayloadDTO;
 import org.hzero.boot.platform.code.builder.CodeRuleBuilder;
 import org.hzero.boot.platform.profile.ProfileClient;
 import org.hzero.boot.workflow.dto.RunTaskHistory;
+import org.hzero.core.base.AopProxy;
 import org.hzero.core.base.BaseAppService;
+import org.hzero.mybatis.domian.Condition;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -48,7 +52,7 @@ import java.util.stream.Collectors;
  */
 @Service
 @Slf4j
-public class InvCountHeaderServiceImpl extends BaseAppService implements InvCountHeaderService {
+public class InvCountHeaderServiceImpl extends BaseAppService implements InvCountHeaderService, AopProxy<InvCountHeaderServiceImpl> {
     @Autowired
     private InvCountHeaderRepository invCountHeaderRepository;
     @Autowired
@@ -136,29 +140,29 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         if (!CollectionUtils.isEmpty(updateList)) {
             // Filter update records by their status
             List<InvCountHeaderDTO> drafts = updateList.stream()
-                    .filter(header -> "DRAFT".equals(header.getCountStatus()))
+                    .filter(header -> CountStatus.DRAFT.toString().equals(header.getCountStatus()))
                     .collect(Collectors.toList());
 
             List<InvCountHeaderDTO> inCounting = updateList.stream()
-                    .filter(header -> "INCOUNTING".equals(header.getCountStatus()))
+                    .filter(header -> CountStatus.INCOUNTING.toString().equals(header.getCountStatus()))
                     .collect(Collectors.toList());
 
             // Batch update for draft records
             if (!CollectionUtils.isEmpty(drafts)) {
                 invCountHeaderRepository.batchUpdateOptional(
                         new ArrayList<>(drafts),
-                        InvCountHeaderDTO.FIELD_COMPANY_ID,
-                        InvCountHeaderDTO.FIELD_DEPARTMENT_ID,
-                        InvCountHeaderDTO.FIELD_WAREHOUSE_ID,
-                        InvCountHeaderDTO.FIELD_COUNT_DIMENSION,
-                        InvCountHeaderDTO.FIELD_COUNT_TYPE,
-                        InvCountHeaderDTO.FIELD_COUNT_MODE,
-                        InvCountHeaderDTO.FIELD_COUNT_TIME_STR,
-                        InvCountHeaderDTO.FIELD_COUNTER_IDS,
-                        InvCountHeaderDTO.FIELD_SUPERVISOR_IDS,
-                        InvCountHeaderDTO.FIELD_SNAPSHOT_MATERIAL_IDS,
-                        InvCountHeaderDTO.FIELD_SNAPSHOT_BATCH_IDS,
-                        InvCountHeaderDTO.FIELD_REMARK
+                        InvCountHeader.FIELD_COMPANY_ID,
+                        InvCountHeader.FIELD_DEPARTMENT_ID,
+                        InvCountHeader.FIELD_WAREHOUSE_ID,
+                        InvCountHeader.FIELD_COUNT_DIMENSION,
+                        InvCountHeader.FIELD_COUNT_TYPE,
+                        InvCountHeader.FIELD_COUNT_MODE,
+                        InvCountHeader.FIELD_COUNT_TIME_STR,
+                        InvCountHeader.FIELD_COUNTER_IDS,
+                        InvCountHeader.FIELD_SUPERVISOR_IDS,
+                        InvCountHeader.FIELD_SNAPSHOT_MATERIAL_IDS,
+                        InvCountHeader.FIELD_SNAPSHOT_BATCH_IDS,
+                        InvCountHeader.FIELD_REMARK
                 );
             }
 
@@ -166,18 +170,18 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             if (!CollectionUtils.isEmpty(inCounting)) {
                 invCountHeaderRepository.batchUpdateOptional(
                         new ArrayList<>(inCounting),
-                        InvCountHeaderDTO.FIELD_REMARK,
-                        InvCountHeaderDTO.FIELD_REASON
+                        InvCountHeader.FIELD_REMARK,
+                        InvCountHeader.FIELD_REASON
                 );
 
                 inCounting.forEach(header -> {
                     if (!CollectionUtils.isEmpty(header.getCountOrderLineList())) {
                         invCountLineRepository.batchUpdateOptional(
                                 new ArrayList<>(header.getCountOrderLineList()),
-                                InvCountLineDTO.FIELD_REMARK,
-                                InvCountLineDTO.FIELD_COUNTER_IDS,
-                                InvCountLineDTO.FIELD_UNIT_DIFF_QTY,
-                                InvCountLineDTO.FIELD_UNIT_QTY
+                                InvCountLine.FIELD_REMARK,
+                                InvCountLine.FIELD_COUNTER_IDS,
+                                InvCountLine.FIELD_UNIT_DIFF_QTY,
+                                InvCountLine.FIELD_UNIT_QTY
                         );
                     }
                 });
@@ -195,7 +199,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
      * Service class to manually save and validate inventory count headers.
      */
     @Override
-    @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
     public InvCountInfoDTO manualSaveCheck(List<InvCountHeaderDTO> invCountHeaderDTOS) {
         // Return an empty DTO if the input list is null or empty
         if (CollectionUtils.isEmpty(invCountHeaderDTOS)) {
@@ -258,14 +261,15 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         // Iterate through the list of headers to validate each entry
         for (InvCountHeaderDTO invCountHeader : invCountHeaderDTOS) {
             StringBuilder errMsg = new StringBuilder();
+            InvCountHeader countHeader = invCountHeaderMap.get(invCountHeader.getCountHeaderId());
 
             // Ensure the status is "DRAFT" before allowing deletion
-            if (!"DRAFT".equals(invCountHeaderMap.get(invCountHeader.getCountHeaderId()).getCountStatus())) {
+            if (!CountStatus.DRAFT.name().equals(countHeader.getCountStatus())) {
                 errMsg.append("Only allow draft status to be deleted");
             }
 
             // Verify the current user is the creator of the document
-            if (!Objects.equals(userDetails.getUserId(), invCountHeaderMap.get(invCountHeader.getCountHeaderId()).getCreatedBy())) {
+            if (!Objects.equals(userDetails.getUserId(), countHeader.getCreatedBy())) {
                 errMsg.append("Only the document creator is allowed to delete the document");
             }
 
@@ -280,17 +284,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         if (CollectionUtils.isEmpty(theInfo.getErrorList())) {
             // Batch delete successfully validated headers
             invCountHeaderRepository.batchDeleteByPrimaryKey(new ArrayList<>(theInfo.getSuccessList()));
-
-            // Extract header IDs from the success list
-            List<InvCountHeaderDTO> successList = theInfo.getSuccessList();
-            List<Long> idsHeader = new ArrayList<>();
-            successList.forEach(invCountHeaderDTO -> idsHeader.add(invCountHeaderDTO.getCountHeaderId()));
-
-            // Fetch and delete associated inventory count lines
-            InvCountLineDTO invCountLineDTO = new InvCountLineDTO();
-            invCountLineDTO.setIdsHeader(idsHeader);
-            List<InvCountLineDTO> invCountLineDTOS = invCountLineRepository.selectList(invCountLineDTO);
-            invCountLineRepository.batchDeleteByPrimaryKey(new ArrayList<>(invCountLineDTOS));
         }
 
         // Return the result, including any errors
@@ -304,7 +297,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         InvCountHeaderDTO invCountHeaderDTO = new InvCountHeaderDTO();
 
         // Throw exception if no header is found
-        if (invCountHeader == null) {
+        if (Objects.isNull(invCountHeader)) {
             throw new CommonException("Order Not found");
         }
 
@@ -353,12 +346,12 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         // Fetch and map inventory count lines
         List<InvCountLineDTO> invCountLines = invCountLineRepository.selectList(reqList);
         if(!CollectionUtils.isEmpty(invCountLines)){
-            List<InvCountLineDTO> collect = invCountLines.stream().map(invCountLine -> {
-                InvCountLineDTO invCountLineDTO = new InvCountLineDTO();
-                BeanUtils.copyProperties(invCountLine, invCountLineDTO);
-                return invCountLineDTO;
-            }).collect(Collectors.toList());
-            invCountHeaderDTO.setCountOrderLineList(collect);
+//            List<InvCountLineDTO> collect = invCountLines.stream().map(invCountLine -> {
+//                InvCountLineDTO invCountLineDTO = new InvCountLineDTO();
+//                BeanUtils.copyProperties(invCountLine, invCountLineDTO);
+//                return invCountLineDTO;
+//            }).collect(Collectors.toList());
+            invCountHeaderDTO.setCountOrderLineList(invCountLines);
         }
 
         // Fetch warehouse information and set WMS warehouse flag
@@ -384,49 +377,44 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     }
 
 
-    public void validateComDepaWare(InvCountHeaderDTO invCountHeaderDTO,
+    public void validateDepartment(InvCountHeaderDTO invCountHeaderDTO,
                                     StringBuilder errMsg,
-                                    Map<Long, IamDepartment> iamDepartmentMap,
-                                    Map<Long, IamCompany> iamCompanyMap,
-                                    Map<Long, InvWarehouse> warehouseMap) {
-        // Fetch related data for validation
-        InvWarehouse invWarehouse = warehouseMap.get(invCountHeaderDTO.getWarehouseId());
-        IamCompany iamCompany = iamCompanyMap.get(invCountHeaderDTO.getCompanyId());
+                                    Map<Long, IamDepartment> iamDepartmentMap) {
         IamDepartment iamDepartment = iamDepartmentMap.get(invCountHeaderDTO.getDepartmentId());
 
         // Validate warehouse, department, and company existence
-        if (Objects.isNull(invWarehouse)) {
-            errMsg.append("Warehouse Cannot Be Found");
-        }
         if (Objects.isNull(iamDepartment)) {
             errMsg.append("Department Cannot Be Found");
         }
-        if (Objects.isNull(iamCompany)) {
-            errMsg.append("Company Cannot Be Found");
-        }
+
     }
 
     public void validateAvailability(InvCountHeaderDTO invCountHeaderDTO, StringBuilder errMsg) {
         // Parse and extract batch IDs from the input string
-        String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
-        List<Long> batchIds = Arrays.stream(snapshotBatchIds.split(","))
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
-
-        // Parse and extract material IDs from the input string
-        String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
-        List<Long> materialIds = Arrays.stream(snapshotMaterialIds.split(","))
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
-
         // Build an inventory stock query object
         InvStock invStock = new InvStock()
                 .setTenantId(invCountHeaderDTO.getTenantId())
                 .setCompanyId(invCountHeaderDTO.getCompanyId())
                 .setDepartmentId(invCountHeaderDTO.getDepartmentId())
-                .setWarehouseId(invCountHeaderDTO.getWarehouseId())
-                .setBatchIds(batchIds)
-                .setMaterialsId(materialIds);
+                .setWarehouseId(invCountHeaderDTO.getWarehouseId());
+
+        if(StringUtil.isNotBlank(invCountHeaderDTO.getSnapshotBatchIds())){
+            // Parse and extract batch IDs from the input string
+            String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
+            List<Long> batchIds = Arrays.stream(snapshotBatchIds.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            invStock.setBatchIds(batchIds);
+        }
+
+        if(StringUtil.isNotBlank(invCountHeaderDTO.getSnapshotMaterialIds())){
+            // Parse and extract material IDs from the input string
+            String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
+            List<Long> materialIds = Arrays.stream(snapshotMaterialIds.split(","))
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            invStock.setMaterialsId(materialIds);
+        }
 
         // Fetch inventory stocks from the repository
         List<InvStock> invStocks = invStockRepository.selectList(invStock);
@@ -453,33 +441,33 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             return new InvCountInfoDTO();
         }
 
-        // Validate the list against the UpdateCheck class
-        validList(headerDTOS, InvCountHeaderDTO.UpdateCheck.class);
-
         // Fetch related data from repositories and services
         Map<Long, InvCountHeader> invCountHeaderMap = selectByIds(headerDTOS);
         CustomUserDetails userDetails = DetailsHelper.getUserDetails();
-        Map<Long, IamCompany> iamCompanyMap = iamCompanyService.byIdsFromHeader(headerDTOS);
-        Map<Long, InvWarehouse> invWarehouseMap = invWarehouseService.getFromOrders(headerDTOS);
+
         Map<Long, IamDepartment> iamDepartmentMap = iamDepartmentService.getFromHeaders(headerDTOS);
 
         // Iterate through each header DTO for validation
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             StringBuilder errMsg = new StringBuilder();
+            InvCountHeader countHeader = invCountHeaderMap.get(headerDTO.getCountHeaderId());
 
             // Validate that the status is DRAFT
-            if (!"DRAFT".equals(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountStatus())) {
+            if (!CountStatus.DRAFT.name().equals(countHeader.getCountStatus())) {
                 errMsg.append("Only draft status can execute.");
             }
 
             // Validate that the user is the creator of the document
-            if (!Objects.equals(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCreatedBy(), userDetails.getUserId())) {
+            if (!Objects.equals(countHeader.getCreatedBy(), userDetails.getUserId())) {
                 errMsg.append("Only the document creator can execute.");
             }
 
             // Perform specific validations
             validateLOVs(headerDTO);
-            validateComDepaWare(headerDTO, errMsg, iamDepartmentMap, iamCompanyMap, invWarehouseMap);
+
+
+            //TODO so in here need to be consider
+            validateDepartment(headerDTO, errMsg, iamDepartmentMap);
             validateAvailability(headerDTO, errMsg);
 
             // Ensure supervisors and counters are not empty
@@ -488,11 +476,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
             }
             if (headerDTO.getCounterIds().isEmpty()) {
                 errMsg.append("Counter cannot be empty.");
-            }
-
-            // If there are validation errors, throw an exception
-            if (errMsg.length() > 0) {
-                throw new CommonException(errMsg.toString());
             }
         }
 
@@ -509,7 +492,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         }
 
         // Set the count status for each header DTO to "INCOUNTING"
-        headerDTOS.forEach(invCountHeaderDTO -> invCountHeaderDTO.setCountStatus("INCOUNTING"));
+        headerDTOS.forEach(invCountHeaderDTO -> invCountHeaderDTO.setCountStatus(CountStatus.INCOUNTING.name()));
 
         // Batch update the header DTOs in the repository
         invCountHeaderRepository.batchUpdateByPrimaryKeySelective(new ArrayList<>(headerDTOS));
@@ -550,7 +533,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         // Check if the input list is empty; if so, log a warning and return null
         if (headerDTOS.isEmpty()) {
             log.warn("Input list is empty. Returning null.");
-            return null;
+            return new InvCountInfoDTO();
         }
 
         // Retrieve the current user information
@@ -787,10 +770,10 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         invCountLineDTO.setIdsHeader(headerIds);
         List<InvCountLineDTO> invCountLineDTOS = invCountLineRepository.selectList(invCountLineDTO);
         Map<Long, Map<Long, InvCountLineDTO>> linesMap = new HashMap<>();
-        for (InvCountLineDTO warehouse : invCountLineDTOS) {
+        for (InvCountLineDTO lineDTO : invCountLineDTOS) {
             linesMap
-                    .computeIfAbsent(warehouse.getCountHeaderId(), k -> new HashMap<>())
-                    .put(warehouse.getCountLineId(), warehouse);
+                    .computeIfAbsent(lineDTO.getCountHeaderId(), k -> new HashMap<>())
+                    .put(lineDTO.getCountLineId(), lineDTO);
         }
         return linesMap;
     }
@@ -978,7 +961,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     @Transactional(rollbackFor = Exception.class, propagation = Propagation.REQUIRED)
     public InvCountInfoDTO orderSave(List<InvCountHeaderDTO> headerDTOS) {
         // Perform manual validation checks on the input headers.
-        InvCountInfoDTO validationInfo = self().manualSaveCheck(headerDTOS);
+        InvCountInfoDTO validationInfo = manualSaveCheck(headerDTOS);
 
         // If there are no validation errors, proceed to save the headers.
         if (CollectionUtils.isEmpty(validationInfo.getErrorList())) {
@@ -1009,7 +992,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         InvCountInfoDTO saveResult = self().orderSave(headerDTOS);
 
         // Return immediately if there are errors in the save process.
-        if (!CollectionUtils.isEmpty(saveResult.getErrorList())) {
+        if (CollectionUtils.isNotEmpty(saveResult.getErrorList())) {
             return saveResult;
         }
 
@@ -1017,8 +1000,9 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         InvCountInfoDTO executionCheckResult = self().executeCheck(saveResult.getSuccessList());
 
         // Return with errors if the execution readiness checks fail.
-        if (!CollectionUtils.isEmpty(executionCheckResult.getErrorList())) {
+        if (CollectionUtils.isNotEmpty(executionCheckResult.getErrorList())) {
             saveResult.setErrorList(executionCheckResult.getErrorList());
+            saveResult.setSuccessList(executionCheckResult.getSuccessList());
             return saveResult;
         }
 
@@ -1027,7 +1011,7 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         saveResult.setSuccessList(executedHeaders);
 
         // Synchronize the executed headers with WMS and return the final result.
-        return countSyncWms(executedHeaders);
+        return self().countSyncWms(executedHeaders);
     }
 
 
@@ -1185,94 +1169,36 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         // List to hold CompletableFutures for asynchronous operations
         List<CompletableFuture<?>> futures = new ArrayList<>();
 
-        // Fetching data asynchronously
-        CompletableFuture<IamCompany> companyFuture = null;
-        if (invCountHeaderDTO.getWareHouseCode() != null) {
-            // Asynchronously fetch company details if warehouse code is provided
-            companyFuture = getIamCompanyAsync(invCountHeaderDTO.getCompanyCode());
-            futures.add(companyFuture); // Add to the list of futures
-        }
-
-        CompletableFuture<IamDepartment> departmentFuture = null;
-        if (invCountHeaderDTO.getWareHouseCode() != null) {
-            // Asynchronously fetch department details if warehouse code is provided
-            departmentFuture = getIamDepartmentAsync(invCountHeaderDTO.getDepartmentCode());
-            futures.add(departmentFuture); // Add to the list of futures
-        }
-
-        CompletableFuture<InvWarehouse> warehouseFuture = null;
-        if (invCountHeaderDTO.getWareHouseCode() != null) {
-            // Asynchronously fetch warehouse details if warehouse code is provided
-            warehouseFuture = getInvWarehouseAsync(invCountHeaderDTO.getWareHouseCode());
-            futures.add(warehouseFuture); // Add to the list of futures
-        }
-
-        // Filter out null values from futures list before passing to allOf
-        futures.removeIf(Objects::isNull);  // Remove null values to avoid issues
-
-        // Wait for all futures to complete (fetching company, department, and warehouse details)
-        if (!futures.isEmpty()) {
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        }
-
-        // Set values after all async tasks are completed, checking for errors and null results
-        if (companyFuture != null && companyFuture.isDone() && !companyFuture.isCompletedExceptionally()) {
-            IamCompany company = companyFuture.join();  // Using join() to avoid try-catch
-            if (company != null) {
-                invCountHeaderDTO.setCompanyId(company.getCompanyId());
-            }
-        }
-
-        if (departmentFuture != null && departmentFuture.isDone() && !departmentFuture.isCompletedExceptionally()) {
-            IamDepartment department = departmentFuture.join();  // Using join() to avoid try-catch
-            if (department != null) {
-                invCountHeaderDTO.setDepartmentId(department.getDepartmentId());
-            }
-        }
-
-        if (warehouseFuture != null && warehouseFuture.isDone() && !warehouseFuture.isCompletedExceptionally()) {
-            InvWarehouse warehouse = warehouseFuture.join();  // Using join() to avoid try-catch
-            if (warehouse != null) {
-                invCountHeaderDTO.setWarehouseId(warehouse.getWarehouseId());
-            }
-        }
-
         // Fetch invCountHeaderDTOs from the repository
-        List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderRepository.selectList(invCountHeaderDTO);
+        List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderRepository.selectReport(invCountHeaderDTO);
         if (CollectionUtils.isEmpty(invCountHeaderDTOS)) {
             return invCountHeaderDTOS; // Return early if no data is found
         }
 
         // Fetch maps asynchronously for department, warehouse, batch, material, and count lines
-        CompletableFuture<Map<Long, IamDepartment>> iamDepartmentFuture = getIamDepartmentMapAsync(invCountHeaderDTOS);
-        CompletableFuture<Map<Long, InvWarehouse>> warehouseFutureMap = getWarehouseMapAsync(invCountHeaderDTOS);
         CompletableFuture<Map<Long, InvBatch>> invBatchFuture = getInvBatchMapAsync(invCountHeaderDTOS);
         CompletableFuture<Map<Long, InvMaterial>> invMaterialFuture = getInvMaterialMapAsync(invCountHeaderDTOS);
         CompletableFuture<Map<Long, Map<Long, InvCountLineDTO>>> lineMapFuture = getLineMapAsync(invCountHeaderDTOS);
 
         // Add all these futures to the list
-        futures.add(iamDepartmentFuture);
-        futures.add(warehouseFutureMap);
         futures.add(invBatchFuture);
         futures.add(invMaterialFuture);
         futures.add(lineMapFuture);
 
         // Wait for all these futures to complete
-        CompletableFuture.allOf(iamDepartmentFuture, warehouseFutureMap, invBatchFuture, invMaterialFuture, lineMapFuture).join();
+        CompletableFuture.allOf(invBatchFuture, invMaterialFuture, lineMapFuture).join();
 
         // Retrieve the results from the futures
-        Map<Long, IamDepartment> iamDepartmentMap = iamDepartmentFuture.join();
-        Map<Long, InvWarehouse> warehouseMap = warehouseFutureMap.join();
         Map<Long, InvBatch> invBatchMap = invBatchFuture.join();
         Map<Long, InvMaterial> invMaterialMap = invMaterialFuture.join();
         Map<Long, Map<Long, InvCountLineDTO>> lineMap = lineMapFuture.join();
 
         // Prepare a list of statuses for processing
         List<String> statueses = new ArrayList<>();
-        statueses.add("PROCESSING");
-        statueses.add("REJECTED");
-        statueses.add("APPROVED");
-        statueses.add("WITHDRAWN");
+        statueses.add(CountStatus.PROCESSING.name());
+        statueses.add(CountStatus.REJECTED.name());
+        statueses.add(CountStatus.APPROVED.name());
+        statueses.add(CountStatus.WITHDRAWN.name());
 
         // Process each invCountHeaderDTO in parallel (for better performance)
         invCountHeaderDTOS.parallelStream().forEach(invCountHeaderDTO1 -> {
@@ -1299,14 +1225,6 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
                         .collect(Collectors.joining(", "));
                 invCountHeaderDTO1.setMaterialCodes(mCodes);
             }
-
-            // Set department name using department ID
-            String departmentName = iamDepartmentMap.get(invCountHeaderDTO1.getDepartmentId()).getDepartmentName();
-            invCountHeaderDTO1.setDepartmentName(departmentName);
-
-            // Set warehouse code using warehouse ID
-            invCountHeaderDTO1.setWareHouseCode(warehouseMap.get(invCountHeaderDTO1.getWarehouseId()).getWarehouseCode());
-
 
             String superVisorNames = invCountHeaderDTO1.getSupervisorList().stream()
                     .map(UserDTO::getRealName)
@@ -1369,12 +1287,12 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         invCountHeader.setWorkflowId(workFlowEventDTO.getWorkflowId());
 
         // Set the approval time if the document status is "APPROVED".
-        if ("APPROVED".equals(workFlowEventDTO.getDocStatus())) {
+        if (CountStatus.APPROVED.name().equals(workFlowEventDTO.getDocStatus())) {
             invCountHeader.setApprovedTime(workFlowEventDTO.getApprovedTime());
         }
 
         // Assign the current user's ID as the supervisor ID if the document status is "PROCESSING".
-        if ("PROCESSING".equals(workFlowEventDTO.getDocStatus())) {
+        if (CountStatus.PROCESSING.name().equals(workFlowEventDTO.getDocStatus())) {
             Long currentUserId = getUserSelf().getId();
             invCountHeader.setSupervisorIds(String.valueOf(currentUserId));
         }
@@ -1395,6 +1313,10 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
      */
     public void setCreateLineToHeader(InvCountHeaderDTO invCountHeaderDTO, List<InvStockDTO> stocks) {
         // Initialize a list to hold the created count lines.
+        if(CollectionUtils.isEmpty(stocks)){
+            return;
+        }
+
         List<InvCountLineDTO> saveLine = new ArrayList<>();
         int lineNumber = 1;
 
@@ -1443,16 +1365,19 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
         if (CollectionUtils.isEmpty(headerDTOS)) {
             return Collections.emptyMap();
         }
+        List<InvCountHeaderDTO> nonNullHeaders = headerDTOS.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         // Validate and ensure all DTOs have a non-null CountHeaderId
-        headerDTOS.forEach(headerDTO -> {
-            if (headerDTO.getCountHeaderId() == null) {
-                headerDTO.setErrorMsg("Header ID cannot be null");
-            }
+        nonNullHeaders.forEach(headerDTO -> {
+                if (headerDTO.getCountHeaderId() == null) {
+                    headerDTO.setErrorMsg("Header ID cannot be null");
+                }
         });
 
         // Extract unique, non-null CountHeaderIds as a Set
-        Set<Long> countIdSet = headerDTOS.stream()
+        Set<Long> countIdSet = nonNullHeaders.stream()
                 .map(InvCountHeaderDTO::getCountHeaderId)
                 .filter(Objects::nonNull) // Filter out null IDs to avoid issues in queries
                 .collect(Collectors.toSet());
@@ -1479,21 +1404,18 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     /**
      * Validates the update list of inventory count headers.
      */
+    //TODO: there is some constant literal variable that need to be changed and use
     public void updateVerification(List<InvCountHeaderDTO> headerDTOS) {
         if (CollectionUtils.isEmpty(headerDTOS)) return;
 
-        // Validate the list of headers against update-specific constraints
-        validList(headerDTOS, InvCountHeader.UpdateCheck.class);
-
         // Fetch maps asynchronously for department, warehouse, batch, material, and count lines
-        CompletableFuture<Map<Long, InvWarehouse>> warehouseFutureMap = getWarehouseMapAsync(headerDTOS);
-        CompletableFuture<Map<Long, InvCountHeader>> invCountHeaderAsync = getInvCountHeaderAsync(headerDTOS);
-        CompletableFuture<Map<Long, Map<Long, InvCountLineDTO>>> lineMapFuture = getLineMapAsync(headerDTOS);
-        CompletableFuture<Map<Long, IamCompany>> iamCompanyFuture = getCompanyMapAsync(headerDTOS);
-        CompletableFuture<Map<Long, IamDepartment>> iamDepartmentMapAsync = getIamDepartmentMapAsync(headerDTOS);
+        CompletableFuture<Map<Long, InvWarehouse>> warehouseFutureMap = self().getWarehouseMapAsync(headerDTOS);
+        CompletableFuture<Map<Long, InvCountHeader>> invCountHeaderAsync = self().getInvCountHeaderAsync(headerDTOS);
+        CompletableFuture<Map<Long, Map<Long, InvCountLineDTO>>> lineMapFuture = self().getLineMapAsync(headerDTOS);
+        CompletableFuture<Map<Long, IamCompany>> iamCompanyFuture = self().getCompanyMapAsync(headerDTOS);
 
         // Wait for all these futures to complete
-        CompletableFuture.allOf(invCountHeaderAsync, warehouseFutureMap, lineMapFuture, iamDepartmentMapAsync, iamCompanyFuture).join();
+        CompletableFuture.allOf(invCountHeaderAsync, warehouseFutureMap, lineMapFuture, iamCompanyFuture).join();
 
         // Map existing headers by ID for reference
         Map<Long, InvCountHeader> invCountHeaderMap = invCountHeaderAsync.join();
@@ -1504,40 +1426,26 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
 
         Long userId = DetailsHelper.getUserDetails().getUserId();
         // Fetch warehouse information and map lines for validation
-        Map<Long, IamDepartment> iamDepartmentMap = iamDepartmentMapAsync.join();
         Map<Long, InvWarehouse> warehouseMap = warehouseFutureMap.join();
         Map<Long, Map<Long, InvCountLineDTO>> lineMap = lineMapFuture.join();
         Map<Long, IamCompany> iamCompanyMap = iamCompanyFuture.join();
 
         // Define allowed statuses for updates
-        List<String> statuses = Arrays.asList("DRAFT", "INCOUNTING", "REJECTED", "WITHDRAWN");
+        List<String> statuses = Arrays.asList(CountStatus.DRAFT.name(), CountStatus.INCOUNTING.name(), CountStatus.REJECTED.name(), CountStatus.WITHDRAWN.name());
 
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             StringBuilder errMsg = new StringBuilder();
-
-            // Populate missing company and warehouse IDs from the database
-            if (headerDTO.getCompanyId() == null) {
-                headerDTO.setCompanyId(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCompanyId());
-            }
-            if (headerDTO.getWarehouseId() == null) {
-                headerDTO.setWarehouseId(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getWarehouseId());
-            }
+            InvCountHeader countHeader = invCountHeaderMap.get(headerDTO.getCountHeaderId());
 
             // Check status validity
-            String currentStatus = invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCountStatus();
+            String currentStatus = countHeader.getCountStatus();
             if (!statuses.contains(currentStatus)) {
                 errMsg.append("Only draft, in counting, rejected, and withdrawn status can be modified.");
             }
 
             // Prevent unauthorized status changes
-            if (headerDTO.getCountStatus() != null) {
-                errMsg.append("The status cannot be changed.");
-            } else {
-                headerDTO.setCountStatus(currentStatus);
-            }
-
-            if(iamDepartmentMap.get(headerDTO.getDepartmentId()) == null){
-                errMsg.append("Department cannot be found.");
+            if(!headerDTO.getCountStatus().equals(countHeader.getCountStatus())){
+                errMsg.append("The status is different from the database.");
             }
 
             if (iamCompanyMap.get(headerDTO.getCompanyId()) == null) {
@@ -1547,68 +1455,40 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
                 errMsg.append("Warehouse cannot be found.");
             }
             // Ensure draft documents are only modifiable by their creator
-            if ("DRAFT".equals(currentStatus) && !Objects.equals(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCreatedBy(), userId)) {
+            if (CountStatus.DRAFT.name().equals(currentStatus) && !Objects.equals(countHeader.getCreatedBy(), userId)) {
                 errMsg.append("Draft documents can only be modified by their creator.");
             }
 
-
             // Validate permissions for other statuses
-            if (!"DRAFT".equals(currentStatus) && statuses.contains(currentStatus)) {
-                List<String> supervisors = Arrays.asList(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getSupervisorIds().split(","));
-                List<String> counters = Arrays.asList(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCounterIds().split(","));
-
-                if(warehouseMap.get(headerDTO.getWarehouseId()) == null){
-                    errMsg.append("Warehouse cannot be found.");
-                }else {
-                    boolean isWMSWarehouse = warehouseMap.containsKey(headerDTO.getWarehouseId()) && warehouseMap.get(headerDTO.getWarehouseId()).getIsWmsWarehouse() == 1;
-                    if (isWMSWarehouse && !supervisors.contains(userId.toString())) {
-                        errMsg.append("Only supervisors can operate on WMS warehouses.");
-                    }
+            if (!CountStatus.DRAFT.name().equals(currentStatus) && statuses.contains(currentStatus)) {
+                List<String> supervisors = Arrays.asList(countHeader.getSupervisorIds().split(","));
+                List<String> counters = Arrays.asList(countHeader.getCounterIds().split(","));
+                boolean isWMSWarehouse = warehouseMap.containsKey(headerDTO.getWarehouseId()) && warehouseMap.get(headerDTO.getWarehouseId()).getIsWmsWarehouse() == 1;
+                if (isWMSWarehouse && !supervisors.contains(userId.toString())) {
+                    errMsg.append("Only supervisors can operate on WMS warehouses.");
                 }
-                if (!counters.contains(userId.toString()) && !supervisors.contains(userId.toString()) && !Objects.equals(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getCreatedBy(), userId)) {
+                if (!counters.contains(userId.toString()) && !supervisors.contains(userId.toString()) && !Objects.equals(countHeader.getCreatedBy(), userId)) {
                     errMsg.append("Only authorized personnel can modify documents in non-draft statuses.");
                 }
-            }
-
-            // Restrict reason changes to specific statuses
-            if ("DRAFT".equals(currentStatus) && statuses.contains(currentStatus) && headerDTO.getReason() != null ) {
-                errMsg.append("Reasons can only be modified for non-draft statuses.");
-            }
-
-            // Populate missing snapshot material and batch IDs
-            if (headerDTO.getSnapshotMaterialIds() == null) {
-                headerDTO.setSnapshotMaterialIds(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getSnapshotMaterialIds());
-            }
-            if (headerDTO.getSnapshotBatchIds() == null) {
-                headerDTO.setSnapshotBatchIds(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getSnapshotBatchIds());
             }
 
             Set<Long> idsCounter = new HashSet<>();
             Arrays.stream(headerDTO.getCounterIds().split(",")).forEach(
                     s -> idsCounter.add(Long.parseLong(s))
             );
+
             // Validate associated count lines
             List<InvCountLineDTO> invCountLineDTOList = headerDTO.getCountOrderLineList();
             if (!CollectionUtils.isEmpty(invCountLineDTOList)) {
                 for (InvCountLineDTO invCountLineDTO : invCountLineDTOList) {
-                    if (invCountLineDTO.getTenantId() == null) {
-                        invCountLineDTO.setTenantId(invCountHeaderMap.get(headerDTO.getCountHeaderId()).getTenantId());
-                    }
-                    if (invCountLineDTO.getCountHeaderId() == null) {
-                        invCountLineDTO.setCountHeaderId(headerDTO.getCountHeaderId());
-                    }
-
                     // Calculate unit differences for "INCOUNTING" status
-                    if ("INCOUNTING".equals(currentStatus)
+                    if (CountStatus.INCOUNTING.name().equals(currentStatus)
                             && invCountLineDTO.getUnitQty() != null && idsCounter.contains(userId)) {
                         BigDecimal difference = invCountLineDTO.getUnitQty().subtract(lineMap.get(headerDTO.getCountHeaderId()).get(invCountLineDTO.getCountLineId()).getSnapshotUnitQty());
                         invCountLineDTO.setUnitDiffQty(difference);
                         invCountLineDTO.setCounterIds(userId.toString());
                     }
                 }
-
-                // Validate count lines
-                validList(headerDTO.getCountOrderLineList(), InvCountLine.UpdateCheck.class);
             }
 
             // Assign accumulated error messages
@@ -1620,15 +1500,13 @@ public class InvCountHeaderServiceImpl extends BaseAppService implements InvCoun
     /**
      * Validates the insert list of inventory count headers.
      */
+    //TODO need to be full understanding using @async
     public void insertVerification(List<InvCountHeaderDTO> headerDTOS) {
         if (CollectionUtils.isEmpty(headerDTOS)) return;
 
-        // Validate the list of headers against creation-specific constraints
-        validList(headerDTOS, InvCountHeader.CreateCheck.class);
-
-        // Fetch maps asynchronously for department, warehouse, batch, material, and count lines
-        CompletableFuture<Map<Long, IamCompany>> iamDepartmentFuture = getCompanyMapAsync(headerDTOS);
-        CompletableFuture<Map<Long, InvWarehouse>> warehouseFutureMap = getWarehouseMapAsync(headerDTOS);
+        // Fetch maps asynchronously for department, warehouse
+        CompletableFuture<Map<Long, IamCompany>> iamDepartmentFuture = self().getCompanyMapAsync(headerDTOS);
+        CompletableFuture<Map<Long, InvWarehouse>> warehouseFutureMap = self().getWarehouseMapAsync(headerDTOS);
 
         // Wait for all these futures to complete
         CompletableFuture.allOf(iamDepartmentFuture, warehouseFutureMap).join();

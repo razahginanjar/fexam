@@ -5,6 +5,7 @@ import com.hand.demo.api.dto.InvStockDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import io.choerodon.mybatis.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvStockService;
 import org.springframework.stereotype.Service;
@@ -68,24 +69,34 @@ public class InvStockServiceImpl implements InvStockService {
         // Check if the count dimension is "LOT" and set the lot flag accordingly
         invStockDTO.setLot("LOT".equals(invCountHeaderDTO.getCountDimension()));
 
-        // Convert the snapshotMaterialIds from CSV to a List<Long>
-        String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
-        List<Long> materialIds = Arrays.stream(snapshotMaterialIds.split(","))
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
-        invStockDTO.setMaterialsId(materialIds);
+        if(StringUtil.isNotEmpty(invCountHeaderDTO.getSnapshotMaterialIds())){
+            // Convert the snapshotMaterialIds from string to a List<Long>
+            String snapshotMaterialIds = invCountHeaderDTO.getSnapshotMaterialIds();
+            List<Long> materialIds = Arrays.stream(snapshotMaterialIds.split(","))
+                    .filter(s -> !s.trim().isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            invStockDTO.setMaterialsId(materialIds);
+        }
 
-        // Convert the snapshotBatchIds from CSV to a List<Long>
-        String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
-        List<Long> batchIds = Arrays.stream(snapshotBatchIds.split(","))
-                .map(Long::parseLong)
-                .collect(Collectors.toList());
-        invStockDTO.setBatchIds(batchIds);
+        if(StringUtil.isNotEmpty(invCountHeaderDTO.getSnapshotBatchIds())){
+            // Convert the snapshotBatchIds from string to a List<Long>
+            String snapshotBatchIds = invCountHeaderDTO.getSnapshotBatchIds();
+            List<Long> batchIds = Arrays.stream(snapshotBatchIds.split(","))
+                    .filter(s -> !s.trim().isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+            invStockDTO.setBatchIds(batchIds);
+        }
+
+
 
         // Set other relevant properties of invStockDTO from invCountHeaderDTO
         invStockDTO.setTenantId(invCountHeaderDTO.getTenantId());
         invStockDTO.setCompanyId(invCountHeaderDTO.getCompanyId());
-        invStockDTO.setDepartmentId(invCountHeaderDTO.getDepartmentId());
+        if(invCountHeaderDTO.getDepartmentId()!= null){
+            invStockDTO.setDepartmentId(invCountHeaderDTO.getDepartmentId());
+        }
         invStockDTO.setWarehouseId(invCountHeaderDTO.getWarehouseId());
 
         // Fetch the summarized stock data from the repository and return it

@@ -20,5 +20,6 @@ public interface InvCountHeaderMapper extends BaseMapper<InvCountHeader> {
      * @return 返回值
      */
     List<InvCountHeaderDTO> selectList(InvCountHeaderDTO invCountHeader);
+    List<InvCountHeaderDTO> selectReportCondition(InvCountHeaderDTO invCountHeader);
 }
 

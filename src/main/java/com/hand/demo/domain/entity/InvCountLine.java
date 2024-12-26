@@ -70,7 +70,7 @@ public class InvCountLine extends AuditDomain {
     @ApiModelProperty("")
     @Id
     @GeneratedValue
-    @NotNull(groups = {UpdateCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class})
     private Long countLineId;
 
     @ApiModelProperty(value = "")
@@ -125,7 +125,7 @@ public class InvCountLine extends AuditDomain {
     private Long batchId;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull(groups = {CreateCheck.class})
+    @NotNull(groups = {CreateCheck.class, OrderSaveCheck.class})
     private Long countHeaderId;
 
     @ApiModelProperty(value = "")
@@ -133,7 +133,7 @@ public class InvCountLine extends AuditDomain {
     private String counterIds;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull(groups = {UpdateCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class})
     private Integer lineNumber;
 
     @ApiModelProperty(value = "")
@@ -144,11 +144,11 @@ public class InvCountLine extends AuditDomain {
     private String remark;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class, UpdateCheck.class})
+    @NotNull(groups = {CreateCheck.class})
     private BigDecimal snapshotUnitQty;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull(groups = {CreateCheck.class, UpdateCheck.class})
+    @NotNull(groups = {CreateCheck.class, OrderSaveCheck.class})
     private Long tenantId;
 
     @ApiModelProperty(value = "")
@@ -166,6 +166,7 @@ public class InvCountLine extends AuditDomain {
 
     public interface UpdateCheck{}
     public interface CreateCheck{}
+    public interface OrderSaveCheck{}
 
 }
 

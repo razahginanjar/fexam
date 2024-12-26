@@ -39,6 +39,8 @@ public class InvCountHeaderController extends BaseController {
 
     @Autowired
     private InvCountHeaderService invCountHeaderService;
+    @Autowired
+    private InvCountHeaderRepository invCountHeaderRepository;
 
     @ApiOperation(value = "列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
@@ -70,7 +72,14 @@ public class InvCountHeaderController extends BaseController {
     public ResponseEntity<InvCountInfoDTO> orderSave(@PathVariable Long organizationId,
                                                              @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
         SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
-        invCountHeaders.forEach(item -> item.setTenantId(organizationId));
+        validList(invCountHeaders, InvCountHeader.OrderSaveCheck.class);
+        invCountHeaders.forEach(
+                invCountHeaderDTO -> {
+                    if(CollectionUtils.isNotEmpty(invCountHeaderDTO.getCountOrderLineList())){
+                        validList(invCountHeaderDTO.getCountOrderLineList());
+                    }
+                }
+        );
         InvCountInfoDTO invCountInfoDTO = invCountHeaderService.orderSave(invCountHeaders);
         return Results.success(invCountInfoDTO);
     }
@@ -81,7 +90,7 @@ public class InvCountHeaderController extends BaseController {
     public ResponseEntity<InvCountInfoDTO> orderExecution(@PathVariable Long organizationId,
                                                      @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
         SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
-        invCountHeaders.forEach(item -> item.setTenantId(organizationId));
+        validList(invCountHeaders, InvCountHeader.OrderExecuteCheck.class);
         InvCountInfoDTO invCountInfoDTO = invCountHeaderService.orderExecution(invCountHeaders);
         return Results.success(invCountInfoDTO);
     }
@@ -142,8 +151,10 @@ public class InvCountHeaderController extends BaseController {
     public ResponseEntity<List<InvCountHeaderDTO>> countingOrderReportDs(
             @PathVariable Long organizationId,
             InvCountHeaderDTO invCountHeaderDTO) {
-        List<InvCountHeaderDTO> report = invCountHeaderService.report(invCountHeaderDTO);
+//        List<InvCountHeaderDTO> report = invCountHeaderService.report(invCountHeaderDTO);
+        List<InvCountHeaderDTO> report = invCountHeaderRepository.selectReport(invCountHeaderDTO);
         return Results.success(report);
+
     }
 }
 

@@ -28,4 +28,6 @@ public interface InvCountHeaderRepository extends BaseRepository<InvCountHeader>
      * @return 返回值
      */
     InvCountHeader selectByPrimary(Long countHeaderId);
+
+    List<InvCountHeaderDTO> selectReport(InvCountHeaderDTO invCountHeaderDTO);
 }

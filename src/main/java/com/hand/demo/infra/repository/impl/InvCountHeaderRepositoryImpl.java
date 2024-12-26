@@ -48,6 +48,11 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
         }
 
         List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderMapper.selectList(invCountHeader);
+        setUsersName(invCountHeaderDTOS);
+        return invCountHeaderDTOS;
+    }
+
+    public void setUsersName(List<InvCountHeaderDTO> invCountHeaderDTOS){
         for (InvCountHeaderDTO invCountHeaderDTO : invCountHeaderDTOS) {
             String[] superSplit = invCountHeaderDTO.getSupervisorIds().split(",");
             List<UserDTO> superUsers = new ArrayList<>();
@@ -66,7 +71,6 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
             invCountHeaderDTO.setCounterList(counterUsers);
             invCountHeaderDTO.setSupervisorList(superUsers);
         }
-        return invCountHeaderDTOS;
     }
 
     public UserVO getUserSelf(){
@@ -97,6 +101,18 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
         } catch (JsonProcessingException e) {
             throw new CommonException(e.getMessage());
         }
+    }
+
+    @Override
+    @ProcessCacheValue
+    public List<InvCountHeaderDTO> selectReport(InvCountHeaderDTO invCountHeaderDTO) {
+        List<InvCountHeaderDTO> invCountHeaderDTOS = invCountHeaderMapper.selectReportCondition(invCountHeaderDTO);
+        UserVO userSelf = getUserSelf();
+        if(userSelf.getTenantAdminFlag() != null){
+            invCountHeaderDTO.setTenantAdminFlag(userSelf.getTenantAdminFlag());
+        }
+        setUsersName(invCountHeaderDTOS);
+        return invCountHeaderDTOS;
     }
 
 }

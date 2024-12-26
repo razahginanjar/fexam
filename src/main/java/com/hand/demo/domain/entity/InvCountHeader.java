@@ -86,7 +86,6 @@ public class InvCountHeader extends AuditDomain {
     @ApiModelProperty("")
     @Id
     @GeneratedValue
-    @NotNull(groups = {UpdateCheck.class})
     private Long countHeaderId;
 
     @ApiModelProperty(value = "")
@@ -141,43 +140,46 @@ public class InvCountHeader extends AuditDomain {
     private String attributeCategory;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {UpdateCheck.class, CreateCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
     private Long companyId;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_DIMENSION, groups = {UpdateCheck.class}, message = "Mismatch value lov dimension")
+    @LovValue(lovCode = Constants.LOV_DIMENSION, groups = {OrderSaveCheck.class}, message = "Mismatch value lov dimension")
+    @NotBlank(groups = {OrderExecuteCheck.class})
     private String countDimension;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_COUNT_MODE, groups = {UpdateCheck.class}, message = "Mismatch value lov count")
+    @LovValue(lovCode = Constants.LOV_COUNT_MODE, groups = {OrderSaveCheck.class}, message = "Mismatch value lov count")
+    @NotBlank(groups = {OrderExecuteCheck.class})
     private String countMode;
 
     @ApiModelProperty(value = "", required = true)
-    @NotBlank(groups = {UpdateCheck.class})
+    @NotBlank
     private String countNumber;
 
     @ApiModelProperty(value = "", required = true)
-    @LovValue(lovCode = Constants.LOV_STATUS, groups = {CreateCheck.class}, message = "Mismatch Status value lov")
-    @NotBlank(groups = {CreateCheck.class})
+    @LovValue(lovCode = Constants.LOV_STATUS, groups = {OrderSaveCheck.class}, message = "Mismatch Status value lov")
+    @NotBlank(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
     private String countStatus;
 
     @ApiModelProperty(value = "", example = "1977-12-12")
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", groups = {UpdateCheck.class, CreateCheck.class})
+    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
+    @NotBlank(groups = {OrderExecuteCheck.class})
     private String countTimeStr;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_COUNT_TYPE, groups = {UpdateCheck.class}, message = "Mismatch value type lov")
+    @LovValue(lovCode = Constants.LOV_COUNT_TYPE, groups = {OrderSaveCheck.class}, message = "Mismatch value type lov")
+    @NotBlank(groups = {OrderExecuteCheck.class})
     private String countType;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
     private String counterIds;
 
     @ApiModelProperty(value = "")
     private Integer delFlag;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class})
     private Long departmentId;
 
     @ApiModelProperty(value = "")
@@ -205,24 +207,24 @@ public class InvCountHeader extends AuditDomain {
     private String sourceSystem;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class})
     private String supervisorIds;
 
-    @ApiModelProperty(value = "", required = true)
-    @NotNull(groups = {CreateCheck.class})
+    @ApiModelProperty(value = "")
+    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
     private Long tenantId;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class, UpdateCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
     private Long warehouseId;
 
     @ApiModelProperty(value = "")
     private Long workflowId;
 
 
-    public interface CreateCheck{ }
+    public interface OrderSaveCheck{}
     public interface UpdateCheck{}
     public interface Execute{}
-    public interface ExecuteCheck{}
+    public interface OrderExecuteCheck{}
 }
 
