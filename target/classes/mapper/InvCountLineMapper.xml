@@ -34,6 +34,10 @@
                 ficl.unit_qty,
                 ficl.warehouse_id,
             ficl.creation_date,         ficl.created_by,         ficl.last_updated_by,         ficl.last_update_date,         ficl.object_version_number    </sql>
+    <sql id="addingReport">
+        ,
+    </sql>
+
 
     <select id = "selectList" resultType = "com.hand.demo.api.dto.InvCountLineDTO">
         select
@@ -133,6 +137,18 @@
                     #{idHeader}
                 </foreach>
             </if>
+        </where>
+    </select>
+
+    <select id="selectReport" resultType = "com.hand.demo.api.dto.InvCountLineDTO">
+        select
+        <include refid="BaseSql"/>
+        <include refid="addingReport"/>
+        from fexam_inv_count_line ficl
+        join fexam_inv_material fim on ficl
+        join fexam_inv_batch fib on ficl
+        <where>
+
         </where>
     </select>
 </mapper>

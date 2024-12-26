@@ -108,6 +108,7 @@
             <if test="departmentId !=null">
                 and fis.department_id = #{departmentId,jdbcType = INTEGER}
             </if>
+
             <if test="materialCode !=null">
                 and fis.material_code = #{materialCode,jdbcType = VARCHAR}
             </if>
@@ -167,11 +168,18 @@
                     #{materialId}
                 </foreach>
             </if>
+            <if test="materialsId == null or materialsId.isEmpty()">
+                AND fis.material_id IN (1=0)
+            </if>
+
             <if test="batchIds != null and batchIds.size() > 0">
                 AND fis.batch_id IN
                 <foreach collection="batchIds" item="batchId" open="(" separator="," close=")">
                     #{batchId}
                 </foreach>
+            </if>
+            <if test="batchIds == null or batchIds.isEmpty()">
+                AND fis.batch_id IN (1=0)
             </if>
         </where>
         group by

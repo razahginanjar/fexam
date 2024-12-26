@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hand.demo.infra.mapper.InvCountHeaderMapper">
+    <resultMap id="resultReport" type="com.hand.demo.api.dto.InvCountHeaderDTO">
+        <id></id>
+        <result></result>
+        <collection property="countOrderLineList">
 
+        </collection>
+    </resultMap>
 
     <sql id = "BaseSql">
             fich.count_header_id,
@@ -45,6 +51,11 @@
                 fich.warehouse_id,
                 fich.workflow_id,
             fich.creation_date,         fich.created_by,         fich.last_updated_by,         fich.last_update_date,         fich.object_version_number    </sql>
+
+    <sql id="addResultReport">
+        ,fiw.warehouse_code,
+        fiad.department_name
+    </sql>
 
     <select id = "selectList" resultType = "com.hand.demo.api.dto.InvCountHeaderDTO">
         select
@@ -176,6 +187,39 @@
                 <foreach collection="docStatuses" item="docStatus" open="(" separator="," close=")">
                     #{docStatus}
                 </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="selectReportCondition" resultType="com.hand.demo.api.dto.InvCountHeaderDTO">
+        select
+        <include refid="BaseSql"/>
+        <include refid="addResultReport"/>
+        from fexam_inv_count_header fich
+        join fexam_iam_company fiam on fich.company_id = fiam.company_id
+        join fexam_iam_department fiad on fich.department_id = fiad.department_id
+        join fexam_inv_warehouse fiw on fich.warehouse_id = fiw.warehouse_id
+        <where>
+            <if test="docStatuses != null and !docStatuses.isEmpty()">
+                AND fich.count_status IN
+                <foreach collection="docStatuses" item="docStatus" open="(" separator="," close=")">
+                    #{docStatus}
+                </foreach>
+            </if>
+            <if test="wareHouseCode != null">
+                and fiw.warehouse_code = #{wareHouseCode,jdbcType=VARCHAR}
+            </if>
+            <if test="tenantId != null">
+                and fich.tenant_id = #{tenantId,jdbcType=INTEGER}
+            </if>
+            <if test="departmentCode != null">
+                and fiad.department_code = #{departmentCode,jdbcType=VARCHAR}
+            </if>
+            <if test="countNumber != null">
+                and fich.count_number like CONCAT('%', #{countNumber,jdbcType=VARCHAR}, '%')
+            </if>
+            <if test="companyCode != null">
+                and fiam.company_code = #{companyCode,jdbcType=VARCHAR}
             </if>
         </where>
     </select>
