@@ -19,7 +19,7 @@ public interface InvStockRepository extends BaseRepository<InvStock> {
      * @param invStock 查询条件
      * @return 返回值
      */
-    List<InvStock> selectList(InvStock invStock);
+    List<InvStockDTO> selectList(InvStockDTO invStock);
 
     /**
      * 根据主键查询（可关联表）
@@ -29,4 +29,5 @@ public interface InvStockRepository extends BaseRepository<InvStock> {
      */
     InvStock selectByPrimary(Long stockId);
     List<InvStockDTO> getSummarizeStock(InvStockDTO invStockDTO);
+    List<InvStock> checkAvailability(InvStockDTO invStock);
 }

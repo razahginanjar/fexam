@@ -70,7 +70,7 @@ public class InvCountLine extends AuditDomain {
     @ApiModelProperty("")
     @Id
     @GeneratedValue
-    @NotNull(groups = {OrderSaveCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, CountSyncResult.class})
     private Long countLineId;
 
     @ApiModelProperty(value = "")
@@ -125,11 +125,10 @@ public class InvCountLine extends AuditDomain {
     private Long batchId;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull(groups = {CreateCheck.class, OrderSaveCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class})
     private Long countHeaderId;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class})
     private String counterIds;
 
     @ApiModelProperty(value = "", required = true)
@@ -137,18 +136,16 @@ public class InvCountLine extends AuditDomain {
     private Integer lineNumber;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class})
     private Long materialId;
 
     @ApiModelProperty(value = "")
     private String remark;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {CreateCheck.class})
     private BigDecimal snapshotUnitQty;
 
     @ApiModelProperty(value = "", required = true)
-    @NotNull(groups = {CreateCheck.class, OrderSaveCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, CountSyncResult.class, CountSyncResult.class})
     private Long tenantId;
 
     @ApiModelProperty(value = "")
@@ -158,13 +155,14 @@ public class InvCountLine extends AuditDomain {
     private BigDecimal unitDiffQty;
 
     @ApiModelProperty(value = "")
+    @NotNull(groups = {CountSyncResult.class})
     private BigDecimal unitQty;
 
     @ApiModelProperty(value = "")
     @NotNull(groups = {CreateCheck.class})
     private Long warehouseId;
 
-    public interface UpdateCheck{}
+    public interface CountSyncResult{}
     public interface CreateCheck{}
     public interface OrderSaveCheck{}
 

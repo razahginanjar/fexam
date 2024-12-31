@@ -23,7 +23,7 @@ public interface InvStockService {
      * @param invStocks   查询条件
      * @return 返回值
      */
-    Page<InvStock> selectList(PageRequest pageRequest, InvStock invStocks);
+    Page<InvStockDTO> selectList(PageRequest pageRequest, InvStockDTO invStocks);
 
     /**
      * 保存数据
@@ -31,7 +31,7 @@ public interface InvStockService {
      * @param invStocks 数据
      */
     void saveData(List<InvStock> invStocks);
-    List<InvStock> getListStockAccordingHeader(InvCountHeaderDTO invCountHeaderDTO);
+    List<InvStockDTO> getListStockAccordingHeader(InvCountHeaderDTO invCountHeaderDTO);
     List<InvStockDTO> getSummarizeStock(InvCountHeaderDTO invCountHeaderDTO);
 
 }

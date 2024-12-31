@@ -34,7 +34,7 @@ import lombok.experimental.Accessors;
 @VersionAudit
 @ModifyAudit
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
-@Accessors(chain = true)
+
 @Table(name = "fexam_inv_stock")
 public class InvStock extends AuditDomain {
     private static final long serialVersionUID = 877428844286536255L;
@@ -155,10 +155,10 @@ public class InvStock extends AuditDomain {
     @ApiModelProperty(value = "")
     private Long warehouseId;
 
-    @Transient
-    private List<Long> materialsId;
-
-    @Transient
-    private List<Long> batchIds;
+//    @Transient
+//    private List<Long> materialsId;
+//
+//    @Transient
+//    private List<Long> batchIds;
 }
 

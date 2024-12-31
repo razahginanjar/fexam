@@ -1,13 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.hand.demo.infra.mapper.InvCountHeaderMapper">
-    <resultMap id="resultReport" type="com.hand.demo.api.dto.InvCountHeaderDTO">
-        <id></id>
-        <result></result>
-        <collection property="countOrderLineList">
-
-        </collection>
-    </resultMap>
 
     <sql id = "BaseSql">
             fich.count_header_id,
@@ -196,9 +189,9 @@
         <include refid="BaseSql"/>
         <include refid="addResultReport"/>
         from fexam_inv_count_header fich
-        join fexam_iam_company fiam on fich.company_id = fiam.company_id
-        join fexam_iam_department fiad on fich.department_id = fiad.department_id
-        join fexam_inv_warehouse fiw on fich.warehouse_id = fiw.warehouse_id
+        left join fexam_iam_company fiam on fich.company_id = fiam.company_id
+        left join fexam_iam_department fiad on fich.department_id = fiad.department_id
+        left join fexam_inv_warehouse fiw on fich.warehouse_id = fiw.warehouse_id
         <where>
             <if test="docStatuses != null and !docStatuses.isEmpty()">
                 AND fich.count_status IN

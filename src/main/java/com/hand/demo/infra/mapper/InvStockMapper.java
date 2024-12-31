@@ -19,7 +19,8 @@ public interface InvStockMapper extends BaseMapper<InvStock> {
      * @param invStock 查询条件
      * @return 返回值
      */
-    List<InvStock> selectList(InvStock invStock);
+    List<InvStockDTO> selectList(InvStockDTO invStock);
     List<InvStockDTO> selectAvailabilityQty(InvStockDTO invStockDTO);
+    List<InvStockDTO> checkAvailabilityQty(InvStockDTO invStockDTO);
 }
 

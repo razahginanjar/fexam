@@ -5,6 +5,7 @@ import com.hand.demo.domain.entity.InvWarehouse;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import jodd.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.IamDepartmentService;
 import org.springframework.stereotype.Service;
@@ -46,6 +47,8 @@ public class IamDepartmentServiceImpl implements IamDepartmentService {
         // Collect unique department IDs from the headerDTOS list.
         // Convert each departmentId to a string and collect them in a set to ensure uniqueness.
         Set<String> departmentIds = headerDTOS.stream()
+                .filter(Objects::nonNull)
+                .filter(invCountHeaderDTO -> Objects.nonNull(invCountHeaderDTO.getDepartmentId()))
                 .map(header -> header.getDepartmentId().toString())  // Convert each departmentId to string
                 .collect(Collectors.toSet());  // Collect unique department IDs into a set
 
@@ -54,7 +57,10 @@ public class IamDepartmentServiceImpl implements IamDepartmentService {
 
         // Fetch the list of IamDepartment entities by the joined department IDs.
         // Assumes that the repository method `selectByIds` handles the SQL query based on the provided IDs.
-        List<IamDepartment> iamDepartments = iamDepartmentRepository.selectByIds(departmentIdString);
+        List<IamDepartment> iamDepartments = new ArrayList<>();
+        if(StringUtil.isNotBlank(departmentIdString)){
+            iamDepartments = iamDepartmentRepository.selectByIds(departmentIdString);
+        }
 
         // Create a map to store the IamDepartment objects by their departmentId.
         // This allows for quick lookup by departmentId.

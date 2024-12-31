@@ -29,7 +29,7 @@ public class InvStockServiceImpl implements InvStockService {
     private InvStockRepository invStockRepository;
 
     @Override
-    public Page<InvStock> selectList(PageRequest pageRequest, InvStock invStock) {
+    public Page<InvStockDTO> selectList(PageRequest pageRequest, InvStockDTO invStock) {
         return PageHelper.doPageAndSort(pageRequest, () -> invStockRepository.selectList(invStock));
     }
 
@@ -41,8 +41,8 @@ public class InvStockServiceImpl implements InvStockService {
         invStockRepository.batchUpdateByPrimaryKeySelective(updateList);
     }
     @Override
-    public List<InvStock> getListStockAccordingHeader(InvCountHeaderDTO invCountHeaderDTO){
-        InvStock invStock = new InvStock();
+    public List<InvStockDTO> getListStockAccordingHeader(InvCountHeaderDTO invCountHeaderDTO){
+        InvStockDTO invStock = new InvStockDTO();
         invStock.setDepartmentId(invCountHeaderDTO.getDepartmentId());
         invStock.setWarehouseId(invCountHeaderDTO.getWarehouseId());
         invStock.setCompanyId(invCountHeaderDTO.getCompanyId());
@@ -89,14 +89,10 @@ public class InvStockServiceImpl implements InvStockService {
             invStockDTO.setBatchIds(batchIds);
         }
 
-
-
         // Set other relevant properties of invStockDTO from invCountHeaderDTO
         invStockDTO.setTenantId(invCountHeaderDTO.getTenantId());
         invStockDTO.setCompanyId(invCountHeaderDTO.getCompanyId());
-        if(invCountHeaderDTO.getDepartmentId()!= null){
-            invStockDTO.setDepartmentId(invCountHeaderDTO.getDepartmentId());
-        }
+        invStockDTO.setDepartmentId(invCountHeaderDTO.getDepartmentId());
         invStockDTO.setWarehouseId(invCountHeaderDTO.getWarehouseId());
 
         // Fetch the summarized stock data from the repository and return it

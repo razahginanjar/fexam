@@ -42,9 +42,9 @@ public class InvStockController extends BaseController {
     @ApiOperation(value = "列表")
     @Permission(level = ResourceLevel.ORGANIZATION)
     @GetMapping
-    public ResponseEntity<Page<InvStock>> list(InvStock invStock, @PathVariable Long organizationId, @ApiIgnore @SortDefault(value = InvStock.FIELD_STOCK_ID,
+    public ResponseEntity<Page<InvStockDTO>> list(InvStockDTO invStock, @PathVariable Long organizationId, @ApiIgnore @SortDefault(value = InvStock.FIELD_STOCK_ID,
             direction = Sort.Direction.DESC) PageRequest pageRequest) {
-        Page<InvStock> list = invStockService.selectList(pageRequest, invStock);
+        Page<InvStockDTO> list = invStockService.selectList(pageRequest, invStock);
         return Results.success(list);
     }
 

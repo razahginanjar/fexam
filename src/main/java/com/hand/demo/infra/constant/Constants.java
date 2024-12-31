@@ -26,6 +26,8 @@ public class Constants {
     public final static String CODE_SERVER = "FEXAM_WMS";
     public final static String NAMESPACE = "HZERO";
     public final static String INTERFACE_CODE = "fexam-wms-api.thirdAddCounting";
+    public final static String MONTH_FORMAT = "yyyy-MM";
+    public final static String YEAR_FORMAT = "yyyy";
     private Constants() {}
 
 

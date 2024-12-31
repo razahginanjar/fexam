@@ -2,10 +2,11 @@ package com.hand.demo.api.dto;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 @Data
-public class WorkFlowEventDTO {
+public class WorkFlowEventDTO implements Serializable {
     /**
      * business key
      */

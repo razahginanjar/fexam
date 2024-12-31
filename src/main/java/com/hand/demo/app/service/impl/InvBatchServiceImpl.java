@@ -4,6 +4,7 @@ import com.hand.demo.api.dto.InvCountHeaderDTO;
 import io.choerodon.core.domain.Page;
 import io.choerodon.mybatis.pagehelper.PageHelper;
 import io.choerodon.mybatis.pagehelper.domain.PageRequest;
+import jodd.util.StringUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import com.hand.demo.app.service.InvBatchService;
 import org.springframework.stereotype.Service;
@@ -47,7 +48,7 @@ public class InvBatchServiceImpl implements InvBatchService {
         for (InvCountHeaderDTO headerDTO : headerDTOS) {
             // Check if snapshotBatchIds is not null or empty before appending it
             String snapshotBatchIds = headerDTO.getSnapshotBatchIds();
-            if (snapshotBatchIds != null && !snapshotBatchIds.isEmpty()) {
+            if (StringUtil.isNotBlank(snapshotBatchIds)) {
                 ids.append(snapshotBatchIds).append(",");
             }
         }

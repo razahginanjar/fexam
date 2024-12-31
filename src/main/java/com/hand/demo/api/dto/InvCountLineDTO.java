@@ -7,6 +7,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.hzero.core.cache.Cacheable;
 
+import javax.persistence.Column;
 import java.util.List;
 
 @Getter

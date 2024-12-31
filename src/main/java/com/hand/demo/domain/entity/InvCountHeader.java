@@ -140,40 +140,39 @@ public class InvCountHeader extends AuditDomain {
     private String attributeCategory;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Must Be Not Null Or Empty")
     private Long companyId;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_DIMENSION, groups = {OrderSaveCheck.class}, message = "Mismatch value lov dimension")
-    @NotBlank(groups = {OrderExecuteCheck.class})
+    @LovValue(lovCode = Constants.LOV_DIMENSION, groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Mismatch value lov dimension")
+    @NotBlank(groups = {OrderExecuteCheck.class}, message = "Cannot be Null Or Empty")
     private String countDimension;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_COUNT_MODE, groups = {OrderSaveCheck.class}, message = "Mismatch value lov count")
-    @NotBlank(groups = {OrderExecuteCheck.class})
+    @LovValue(lovCode = Constants.LOV_COUNT_MODE, groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Mismatch value lov count")
+    @NotBlank(groups = {OrderExecuteCheck.class}, message = "Cannot be Null or Empty")
     private String countMode;
 
     @ApiModelProperty(value = "", required = true)
-    @NotBlank
+    @NotBlank(groups = {CountSyncResult.class})
     private String countNumber;
 
     @ApiModelProperty(value = "", required = true)
-    @LovValue(lovCode = Constants.LOV_STATUS, groups = {OrderSaveCheck.class}, message = "Mismatch Status value lov")
-    @NotBlank(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
+    @LovValue(lovCode = Constants.LOV_STATUS, groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Mismatch Status value lov")
+    @NotBlank(groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Cannot be Null Or Empty")
     private String countStatus;
 
     @ApiModelProperty(value = "", example = "1977-12-12")
-    @Pattern(regexp = "^\\d{4}-\\d{2}-\\d{2}$", groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
-    @NotBlank(groups = {OrderExecuteCheck.class})
+    @NotBlank(groups = {OrderExecuteCheck.class}, message = "Cannot Be Null Or Empty")
     private String countTimeStr;
 
     @ApiModelProperty(value = "")
-    @LovValue(lovCode = Constants.LOV_COUNT_TYPE, groups = {OrderSaveCheck.class}, message = "Mismatch value type lov")
-    @NotBlank(groups = {OrderExecuteCheck.class})
+    @LovValue(lovCode = Constants.LOV_COUNT_TYPE, groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Mismatch value type lov")
+    @NotBlank(groups = {OrderExecuteCheck.class}, message = "Cannot be Null Or Empty")
     private String countType;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
+    @NotBlank(groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Cannot be Null Or Empty")
     private String counterIds;
 
     @ApiModelProperty(value = "")
@@ -207,15 +206,15 @@ public class InvCountHeader extends AuditDomain {
     private String sourceSystem;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {OrderSaveCheck.class})
+    @NotBlank(groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Cannot be Null Or Empty")
     private String supervisorIds;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class, CountSyncResult.class}, message = "Cannot be Null Or Empty")
     private Long tenantId;
 
     @ApiModelProperty(value = "")
-    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class})
+    @NotNull(groups = {OrderSaveCheck.class, OrderExecuteCheck.class}, message = "Cannot be Null Or Empty")
     private Long warehouseId;
 
     @ApiModelProperty(value = "")
@@ -223,8 +222,7 @@ public class InvCountHeader extends AuditDomain {
 
 
     public interface OrderSaveCheck{}
-    public interface UpdateCheck{}
-    public interface Execute{}
+    public interface CountSyncResult{}
     public interface OrderExecuteCheck{}
 }
 

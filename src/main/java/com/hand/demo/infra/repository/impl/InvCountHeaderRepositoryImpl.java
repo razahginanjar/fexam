@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hand.demo.api.dto.InvCountHeaderDTO;
 import com.hand.demo.api.dto.UserDTO;
 import io.choerodon.core.exception.CommonException;
+import io.choerodon.core.oauth.DetailsHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.hzero.boot.apaas.common.userinfo.domain.UserVO;
 import org.hzero.boot.apaas.common.userinfo.infra.feign.IamRemoteService;
@@ -53,24 +54,26 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
     }
 
     public void setUsersName(List<InvCountHeaderDTO> invCountHeaderDTOS){
-        for (InvCountHeaderDTO invCountHeaderDTO : invCountHeaderDTOS) {
-            String[] superSplit = invCountHeaderDTO.getSupervisorIds().split(",");
-            List<UserDTO> superUsers = new ArrayList<>();
-            for (String s : superSplit) {
-                UserDTO userDTO = new UserDTO();
-                userDTO.setUserId(Long.parseLong(s));
-                superUsers.add(userDTO);
-            }
-            String[] counterSplit = invCountHeaderDTO.getCounterIds().split(",");
-            List<UserDTO> counterUsers = new ArrayList<>();
-            for (String s : counterSplit) {
-                UserDTO userDTO = new UserDTO();
-                userDTO.setUserId(Long.parseLong(s));
-                counterUsers.add(userDTO);
-            }
-            invCountHeaderDTO.setCounterList(counterUsers);
-            invCountHeaderDTO.setSupervisorList(superUsers);
-        }
+        invCountHeaderDTOS.parallelStream().forEach(
+                invCountHeaderDTO -> {
+                    String[] superSplit = invCountHeaderDTO.getSupervisorIds().split(",");
+                    List<UserDTO> superUsers = new ArrayList<>();
+                    for (String s : superSplit) {
+                        UserDTO userDTO = new UserDTO();
+                        userDTO.setUserId(Long.parseLong(s));
+                        superUsers.add(userDTO);
+                    }
+                    String[] counterSplit = invCountHeaderDTO.getCounterIds().split(",");
+                    List<UserDTO> counterUsers = new ArrayList<>();
+                    for (String s : counterSplit) {
+                        UserDTO userDTO = new UserDTO();
+                        userDTO.setUserId(Long.parseLong(s));
+                        counterUsers.add(userDTO);
+                    }
+                    invCountHeaderDTO.setCounterList(counterUsers);
+                    invCountHeaderDTO.setSupervisorList(superUsers);
+                }
+        );
     }
 
     public UserVO getUserSelf(){
@@ -83,24 +86,13 @@ public class InvCountHeaderRepositoryImpl extends BaseRepositoryImpl<InvCountHea
     }
     @Override
     public InvCountHeaderDTO selectByPrimary(Long countHeaderId) {
-        try{
-            ResponseEntity<String> selectSelf = iamRemoteService.selectSelf();
-            UserVO userVO = objectMapper.readValue(selectSelf.getBody(), UserVO.class);
-            InvCountHeaderDTO invCountHeader = new InvCountHeaderDTO();
-            invCountHeader.setCountHeaderId(countHeaderId);
-            invCountHeader.setTenantId(userVO.getTenantId());
-            invCountHeader.setUserId(userVO.getId());
-            if(userVO.getTenantAdminFlag() != null){
-                invCountHeader.setTenantAdminFlag(userVO.getTenantAdminFlag());
-            }
-            List<InvCountHeaderDTO> invCountHeaders = selectList(invCountHeader);
-            if (invCountHeaders.size() == 0) {
-                return null;
-            }
-            return invCountHeaders.get(0);
-        } catch (JsonProcessingException e) {
-            throw new CommonException(e.getMessage());
+        InvCountHeaderDTO invCountHeader = new InvCountHeaderDTO();
+        invCountHeader.setCountHeaderId(countHeaderId);
+        List<InvCountHeaderDTO> invCountHeaders = selectList(invCountHeader);
+        if (invCountHeaders.size() == 0) {
+            return null;
         }
+        return invCountHeaders.get(0);
     }
 
     @Override

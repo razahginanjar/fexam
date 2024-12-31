@@ -28,4 +28,5 @@ public interface InvCountLineRepository extends BaseRepository<InvCountLine> {
      * @return 返回值
      */
     InvCountLine selectByPrimary(Long countLineId);
+    List<InvCountLineDTO> selectReport(InvCountLineDTO invCountLine);
 }

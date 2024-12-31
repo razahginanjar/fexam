@@ -26,29 +26,24 @@ public class Utils {
 
     public ResponsePayloadDTO invokeTranslation(
             String jsonString, String namespace, String serverCode,
-            String interfaceCode, String accessToken, String text
-    )
-    {
+            String interfaceCode, String accessToken) {
         RequestPayloadDTO requestPayloadDTO = new RequestPayloadDTO();
         Map<String, String> header = new HashMap<>();
         header.put("Authorization", (StringUtils.isEmpty(accessToken) ? TokenUtils.getToken() : accessToken));
 
-        if(Objects.nonNull(jsonString))
-        {
+        if (Objects.nonNull(jsonString)) {
             requestPayloadDTO.setPayload(jsonString);
             requestPayloadDTO.setMediaType("application/json");
         }
 
         Map<String, String> path = new HashMap<>();
         path.put("organizationId", BaseConstants.DEFAULT_TENANT_ID.toString());
-        if(Objects.nonNull(text))
-        {
-            Map<String, String> params = new HashMap<>();
-            params.put("text", text);
-            requestPayloadDTO.setRequestParamMap(params);
-        }
         requestPayloadDTO.setPathVariableMap(path);
         requestPayloadDTO.setHeaderParamMap(header);
         return interfaceInvokeSdk.invoke(namespace, serverCode, interfaceCode, requestPayloadDTO);
+    }
+
+    public void validationObjectInvoice() {
+
     }
 }

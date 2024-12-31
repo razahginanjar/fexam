@@ -40,7 +40,7 @@
         sum(fis.available_quantity) as summary
     </sql>
 
-    <select id = "selectList" resultType = "com.hand.demo.domain.entity.InvStock">
+    <select id = "selectList" resultType = "com.hand.demo.api.dto.InvStockDTO">
         select
         <include refid = "BaseSql"/>
         from fexam_inv_stock fis
@@ -108,7 +108,6 @@
             <if test="departmentId !=null">
                 and fis.department_id = #{departmentId,jdbcType = INTEGER}
             </if>
-
             <if test="materialCode !=null">
                 and fis.material_code = #{materialCode,jdbcType = VARCHAR}
             </if>
@@ -150,43 +149,54 @@
         <include refid="resultSum"/>
             from fexam_inv_stock fis
         <where>
-            <if test="companyId !=null">
-                and fis.company_id = #{companyId,jdbcType = INTEGER}
-            </if>
-            <if test="departmentId !=null">
-                and fis.department_id = #{departmentId,jdbcType = INTEGER}
-            </if>
-            <if test="warehouseId !=null">
-                and fis.warehouse_id = #{warehouseId,jdbcType = INTEGER}
-            </if>
-            <if test="tenantId !=null">
-                and fis.tenant_id = #{tenantId,jdbcType = INTEGER}
-            </if>
+            fis.company_id = #{companyId,jdbcType = INTEGER}
+            and fis.department_id = #{departmentId,jdbcType = INTEGER}
+            and fis.warehouse_id = #{warehouseId,jdbcType = INTEGER}
+            and fis.tenant_id = #{tenantId,jdbcType = INTEGER}
             <if test="materialsId != null and materialsId.size() > 0">
                 AND fis.material_id IN
                 <foreach collection="materialsId" item="materialId" open="(" separator="," close=")">
                     #{materialId}
                 </foreach>
             </if>
-            <if test="materialsId == null or materialsId.isEmpty()">
-                AND fis.material_id IN (1=0)
-            </if>
-
             <if test="batchIds != null and batchIds.size() > 0">
                 AND fis.batch_id IN
                 <foreach collection="batchIds" item="batchId" open="(" separator="," close=")">
                     #{batchId}
                 </foreach>
             </if>
-            <if test="batchIds == null or batchIds.isEmpty()">
-                AND fis.batch_id IN (1=0)
-            </if>
         </where>
         group by
         <if test="isLot">
             fis.batch_id,
         </if>
-            fis.material_id,fis.unit_code, fis.material_code
+            fis.material_id,fis.unit_code,fis.material_code
+    </select>
+
+    <select id="checkAvailabilityQty" resultType="com.hand.demo.api.dto.InvStockDTO">
+        select
+        <include refid="BaseSql"/>
+        from fexam_inv_stock fis
+        <where>
+            fis.company_id = #{companyId,jdbcType = INTEGER}
+<!--            TODO consider about null department id-->
+            and fis.department_id = #{departmentId,jdbcType = INTEGER}
+            and fis.tenant_id = #{tenantId,jdbcType = INTEGER}
+            and fis.warehouse_id = #{warehouseId,jdbcType = INTEGER}
+            and fis.available_quantity > 0
+            <if test="materialsId != null and materialsId.size() > 0">
+                AND fis.material_id IN
+                <foreach collection="materialsId" item="materialId" open="(" separator="," close=")">
+                    #{materialId}
+                </foreach>
+            </if>
+            <if test="batchIds != null and batchIds.size() > 0">
+                AND fis.batch_id IN
+                <foreach collection="batchIds" item="batchId" open="(" separator="," close=")">
+                    #{batchId}
+                </foreach>
+            </if>
+        </where>
     </select>
 </mapper>
 

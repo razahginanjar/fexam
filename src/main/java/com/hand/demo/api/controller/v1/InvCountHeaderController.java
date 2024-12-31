@@ -1,6 +1,7 @@
 package com.hand.demo.api.controller.v1;
 
 import com.hand.demo.api.dto.*;
+import com.hand.demo.domain.entity.InvCountLine;
 import io.choerodon.core.domain.Page;
 import io.choerodon.core.iam.ResourceLevel;
 import io.choerodon.mybatis.pagehelper.annotation.SortDefault;
@@ -100,6 +101,11 @@ public class InvCountHeaderController extends BaseController {
     @PostMapping(path = "/result-sync")
     public ResponseEntity<InvCountHeaderDTO> countResultSync(@PathVariable Long organizationId,
                                                           @RequestBody InvCountHeaderDTO invCountHeader) {
+        //TODO result sync, validate that required
+        validObject(invCountHeader, InvCountHeader.CountSyncResult.class);
+        if(CollectionUtils.isNotEmpty(invCountHeader.getCountOrderLineList())){
+            validList(invCountHeader.getCountOrderLineList(), InvCountLine.CountSyncResult.class);
+        }
         invCountHeader.setTenantId(organizationId);
         InvCountHeaderDTO invCountHeaderDTO = invCountHeaderService.countResultSync(invCountHeader);
         return Results.success(invCountHeaderDTO);
@@ -110,10 +116,12 @@ public class InvCountHeaderController extends BaseController {
     @PostMapping(path = "/submit")
     public ResponseEntity<InvCountInfoDTO> orderSubmit(@PathVariable Long organizationId,
                                                              @RequestBody List<InvCountHeaderDTO> invCountHeaders) {
-        invCountHeaders.forEach(item ->
-                {
-                    if(item.getTenantId() == null){
-                        item.setTenantId(organizationId);
+        SecurityTokenHelper.validTokenIgnoreInsert(invCountHeaders);
+        invCountHeaders.forEach(
+                invCountHeaderDTO -> {
+                    validObject(invCountHeaderDTO, InvCountHeader.OrderSaveCheck.class);
+                    if(CollectionUtils.isNotEmpty(invCountHeaderDTO.getCountOrderLineList())){
+                        validList(invCountHeaderDTO.getCountOrderLineList(), InvCountLine.OrderSaveCheck.class);
                     }
                 }
         );
@@ -126,8 +134,8 @@ public class InvCountHeaderController extends BaseController {
     @PostMapping(path = "/callback")
     public ResponseEntity<?> callback(@PathVariable Long organizationId,
                                                       @RequestBody WorkFlowEventDTO workFlowEventDTO) {
-        invCountHeaderService.callbackHeader(workFlowEventDTO);
-        return Results.success("data status is change " + workFlowEventDTO.getDocStatus());
+        InvCountHeader invCountHeader = invCountHeaderService.callbackHeader(workFlowEventDTO);
+        return Results.success(invCountHeader);
     }
 
 
@@ -151,8 +159,7 @@ public class InvCountHeaderController extends BaseController {
     public ResponseEntity<List<InvCountHeaderDTO>> countingOrderReportDs(
             @PathVariable Long organizationId,
             InvCountHeaderDTO invCountHeaderDTO) {
-//        List<InvCountHeaderDTO> report = invCountHeaderService.report(invCountHeaderDTO);
-        List<InvCountHeaderDTO> report = invCountHeaderRepository.selectReport(invCountHeaderDTO);
+        List<InvCountHeaderDTO> report = invCountHeaderService.report(invCountHeaderDTO);
         return Results.success(report);
 
     }

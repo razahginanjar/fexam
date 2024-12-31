@@ -144,6 +144,6 @@ public interface InvCountHeaderService  {
      *
      * @param workFlowEventDTO Workflow event data transfer object.
      */
-    void callbackHeader(WorkFlowEventDTO workFlowEventDTO);
+    InvCountHeader callbackHeader(WorkFlowEventDTO workFlowEventDTO);
 }
 
